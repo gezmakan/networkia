@@ -48,6 +48,7 @@ const demoProfileDefaults = {
   tags: ["Friend"],
   lastContactDaysAgo: 3,
   nextMeetDate: "2026-01-24",
+  lastContactDate: "2026-01-10",
   personalNotes:
     "Incredibly thoughtful and deliberate in everything he does. Doesn't just act or direct - he thinks deeply about the meaning and impact of stories.\n\nReally cares about environmental issues, not just as talking points but genuinely invested. Started a solar company and does real work in conservation. Appreciates when you engage on those topics.\n\nNot someone who likes small talk. Prefers deep conversations about ideas, philosophy, or specific projects. Once you get him talking about film technique or adaptation, he's fascinating.",
   fields: [
@@ -171,14 +172,15 @@ export default function CharacterDemo2({
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [showNextMeetPopup, setShowNextMeetPopup] = useState(false);
+  const [nextMeetDraft, setNextMeetDraft] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [nextMeetDate, setNextMeetDate] = useState<string | null>(null);
   const [lastContactDaysAgo, setLastContactDaysAgo] = useState<number | null>(null);
+  const [lastContactDate, setLastContactDate] = useState<Date | null>(null);
+  const lastContactInputRef = useRef<HTMLInputElement>(null);
   const [isDemoProfile, setIsDemoProfile] = useState(false);
   const [personalNotes, setPersonalNotes] = useState("");
   const [personalNotesDraft, setPersonalNotesDraft] = useState("");
-  const hasPersonalNotes = personalNotes.trim().length > 0;
-  const hasExpandableNotes =
-    personalNotes.trim().length > 220 || personalNotes.includes("\n\n");
   const [contactId, setContactId] = useState<string | null>(null);
   const [isNewContact, setIsNewContact] = useState(false);
   const [isThoughtsExpanded, setIsThoughtsExpanded] = useState(false);
@@ -189,6 +191,17 @@ export default function CharacterDemo2({
   const [profileTitle, setProfileTitle] = useState("");
   const [profileLocation, setProfileLocation] = useState("");
   const [profileTags, setProfileTags] = useState<string[]>([]);
+
+  const hasPersonalNotes = personalNotes.trim().length > 0;
+  const hasExpandableNotes =
+    personalNotes.trim().length > 220 || personalNotes.includes("\n\n");
+  const profileInitials = profileName
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const [profileFields, setProfileFields] = useState<ProfileField[]>(
     ensureProfileFields([])
@@ -206,7 +219,25 @@ export default function CharacterDemo2({
     if (days < 30) {
       return `${Math.floor(days / 7)}w ago`;
     }
-    return `${Math.floor(days / 30)}mo ago`;
+    if (days < 365) {
+      return `${Math.floor(days / 30)}mo ago`;
+    }
+    return `${Math.floor(days / 365)}y ago`;
+  };
+  const formatFuture = (days: number) => {
+    if (days <= 0) {
+      return "Today";
+    }
+    if (days < 7) {
+      return `in ${days}d`;
+    }
+    if (days < 30) {
+      return `in ${Math.floor(days / 7)}w`;
+    }
+    if (days < 365) {
+      return `in ${Math.floor(days / 30)}mo`;
+    }
+    return `in ${Math.floor(days / 365)}y`;
   };
   const escapeIcsText = (value: string) =>
     value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,");
@@ -423,6 +454,22 @@ export default function CharacterDemo2({
     );
     saveStoredContacts(next);
   };
+  const applyNextMeetDate = (value: string | null) => {
+    setNextMeetDate(value);
+    updateStoredContact(contactId, (contact) => ({
+      ...contact,
+      nextMeetDate: value,
+    }));
+  };
+  const applyLastContact = (value: Date | null, daysAgo: number | null) => {
+    setLastContactDate(value);
+    setLastContactDaysAgo(daysAgo);
+    updateStoredContact(contactId, (contact) => ({
+      ...contact,
+      lastContact: value ? value.toISOString() : "",
+      daysAgo: typeof daysAgo === "number" ? daysAgo : null,
+    }));
+  };
   const handleExportCalendar = () => {
     const storedContacts = loadStoredContacts();
     const events: { uid: string; summary: string; date: Date; rrule?: string }[] =
@@ -511,8 +558,11 @@ export default function CharacterDemo2({
             : []
         )
       );
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       setNextMeetDate(null);
-      setLastContactDaysAgo(null);
+      setLastContactDate(today);
+      setLastContactDaysAgo(0);
       setPersonalNotes("");
       setPersonalNotesDraft("");
       setIsEditingProfile(true);
@@ -551,9 +601,25 @@ export default function CharacterDemo2({
       );
       setProfileFields(ensureProfileFields(storedContact.profileFields || []));
       setNextMeetDate(storedContact.nextMeetDate ?? null);
-      setLastContactDaysAgo(
-        typeof storedContact.daysAgo === "number" ? storedContact.daysAgo : null
-      );
+      const storedDate = storedContact.lastContact
+        ? new Date(storedContact.lastContact)
+        : null;
+      const storedDaysAgo =
+        typeof storedContact.daysAgo === "number" ? storedContact.daysAgo : null;
+      if (storedDate && !Number.isNaN(storedDate.getTime())) {
+        setLastContactDate(storedDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(storedDate);
+        target.setHours(0, 0, 0, 0);
+        const diffDays = Math.round(
+          (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        setLastContactDaysAgo(Math.max(diffDays, 0));
+      } else {
+        setLastContactDate(null);
+        setLastContactDaysAgo(storedDaysAgo);
+      }
       setPersonalNotes(storedContact.personalNotes ?? "");
       setPersonalNotesDraft(storedContact.personalNotes ?? "");
       return;
@@ -572,8 +638,24 @@ export default function CharacterDemo2({
         setProfileLocation(demoProfileDefaults.location);
         setProfileTags(demoProfileDefaults.tags);
         setProfileFields(ensureProfileFields(demoProfileDefaults.fields));
-        setLastContactDaysAgo(demoProfileDefaults.lastContactDaysAgo);
         setNextMeetDate(demoProfileDefaults.nextMeetDate);
+        const demoDate = demoProfileDefaults.lastContactDate
+          ? new Date(demoProfileDefaults.lastContactDate)
+          : null;
+        if (demoDate && !Number.isNaN(demoDate.getTime())) {
+          setLastContactDate(demoDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const target = new Date(demoDate);
+          target.setHours(0, 0, 0, 0);
+          const diffDays = Math.round(
+            (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          setLastContactDaysAgo(Math.max(diffDays, 0));
+        } else {
+          setLastContactDate(null);
+          setLastContactDaysAgo(demoProfileDefaults.lastContactDaysAgo);
+        }
         setPersonalNotes(demoProfileDefaults.personalNotes);
         setPersonalNotesDraft(demoProfileDefaults.personalNotes);
       }
@@ -661,7 +743,7 @@ export default function CharacterDemo2({
                     } overflow-hidden bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-lg group-hover:shadow-xl group-hover:scale-105`}
                   >
                     <div className="w-full h-full flex items-center justify-center text-white text-5xl font-bold">
-                      EN
+                      {profileInitials || "—"}
                     </div>
                   </div>
                   {/* Photo upload hint on hover */}
@@ -829,6 +911,21 @@ export default function CharacterDemo2({
                     </button>
                   ) : (
                     <div className="flex items-center gap-2">
+                      {contactId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(true);
+                          }}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
+                            theme === "light"
+                              ? "bg-red-50 text-red-600 hover:bg-red-100"
+                              : "bg-red-900/30 text-red-300 hover:bg-red-900/50"
+                          }`}
+                        >
+                          Delete
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -879,8 +976,13 @@ export default function CharacterDemo2({
                             tags: profileTags.filter(
                               (tag) => tag.toLowerCase() !== "just met"
                             ),
-                            lastContact: formatMonthDay(new Date()),
-                            daysAgo: 0,
+                            lastContact: lastContactDate
+                              ? lastContactDate.toISOString()
+                              : formatMonthDay(new Date()),
+                            daysAgo:
+                              typeof lastContactDaysAgo === "number"
+                                ? lastContactDaysAgo
+                                : 0,
                             profileFields,
                             nextMeetDate,
                             personalNotes,
@@ -916,6 +1018,89 @@ export default function CharacterDemo2({
                     </div>
                   )}
                 </div>
+                {showDeleteConfirm && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    onClick={(event) => {
+                      if (event.target === event.currentTarget) {
+                        setShowDeleteConfirm(false);
+                      }
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div
+                      className={`relative z-10 w-[92vw] max-w-sm rounded-xl border shadow-xl p-5 ${
+                        theme === "light"
+                          ? "bg-white border-gray-200"
+                          : "bg-gray-800 border-gray-700"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-semibold">
+                            Delete this contact?
+                          </h3>
+                          <p
+                            className={`mt-1 text-sm ${
+                              theme === "light"
+                                ? "text-gray-600"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            This removes the profile from your list. This can’t
+                            be undone.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className={`text-sm font-semibold ${
+                            theme === "light"
+                              ? "text-gray-500 hover:text-gray-700"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                          aria-label="Close"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="mt-5 flex justify-end gap-2">
+                        <button
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                            theme === "light"
+                              ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                              : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                          }`}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!contactId) {
+                              setShowDeleteConfirm(false);
+                              return;
+                            }
+                            const storedContacts = loadStoredContacts();
+                            const nextContacts = storedContacts.filter(
+                              (contact) => contact.id !== contactId
+                            );
+                            saveStoredContacts(nextContacts);
+                            setShowDeleteConfirm(false);
+                            setIsEditingProfile(false);
+                            router.push("/");
+                          }}
+                          className={`px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
+                            theme === "light"
+                              ? "bg-red-600 hover:bg-red-700 text-white"
+                              : "bg-red-600 hover:bg-red-500 text-white"
+                          }`}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-3">
                 {/* Render all profile fields */}
                 {profileFields
@@ -958,7 +1143,7 @@ export default function CharacterDemo2({
                             ) : (
                               <>
                                 <input
-                                  type="text"
+                                  type={field.id === "birthday" ? "date" : "text"}
                                   value={field.value}
                                   onChange={(e) => {
                                     setProfileFields(profileFields.map(f =>
@@ -1183,18 +1368,76 @@ export default function CharacterDemo2({
                     >
                       Last contacted
                     </span>
-                    <button
-                      className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    <label
+                      className={`relative flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer ${
                         theme === "light"
                           ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-gray-900"
                           : "border-gray-700 hover:border-cyan-500 hover:bg-gray-800 text-gray-100"
                       }`}
+                      onClick={() => {
+                        if (lastContactInputRef.current?.showPicker) {
+                          lastContactInputRef.current.showPicker();
+                        }
+                        lastContactInputRef.current?.focus();
+                      }}
                     >
-                      {lastContactDaysAgo === null
-                        ? "Not yet"
-                        : formatRelative(lastContactDaysAgo)}
-                    </button>
+                      <input
+                        ref={lastContactInputRef}
+                        type="date"
+                        value={
+                          lastContactDate
+                            ? lastContactDate.toISOString().split("T")[0]
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const nextDate = e.target.value
+                            ? new Date(e.target.value)
+                            : null;
+                          if (!nextDate) {
+                            applyLastContact(null, null);
+                            return;
+                          }
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const target = new Date(nextDate);
+                          target.setHours(0, 0, 0, 0);
+                          const diffDays = Math.round(
+                            (today.getTime() - target.getTime()) /
+                              (1000 * 60 * 60 * 24)
+                          );
+                          applyLastContact(
+                            nextDate,
+                            Math.max(diffDays, 0)
+                          );
+                        }}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      />
+                      <span>
+                        {lastContactDaysAgo === null
+                          ? "Not yet"
+                          : formatRelative(lastContactDaysAgo)}
+                      </span>
+                      {lastContactDate && (
+                        <span
+                          className={`text-xs ${
+                            theme === "light"
+                              ? "text-gray-500"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {lastContactDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      )}
+                    </label>
                     <button
+                      onClick={() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        applyLastContact(today, 0);
+                      }}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
                         theme === "light"
                           ? "bg-blue-500 hover:bg-blue-600 text-white"
@@ -1214,19 +1457,50 @@ export default function CharacterDemo2({
                       Next meet
                     </span>
                     <button
-                      onClick={() => setShowNextMeetPopup(!showNextMeetPopup)}
+                      onClick={() => {
+                        setNextMeetDraft(nextMeetDate);
+                        setShowNextMeetPopup(true);
+                      }}
                       className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                         theme === "light"
                           ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-gray-900"
                           : "border-gray-700 hover:border-cyan-500 hover:bg-gray-800 text-gray-100"
                       }`}
                     >
-                      {nextMeetDate
-                        ? new Date(nextMeetDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : "Add date"}
+                      {nextMeetDate ? (
+                        (() => {
+                          const date = new Date(nextMeetDate);
+                          if (Number.isNaN(date.getTime())) {
+                            return "Add date";
+                          }
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          date.setHours(0, 0, 0, 0);
+                          const diffDays = Math.round(
+                            (date.getTime() - today.getTime()) /
+                              (1000 * 60 * 60 * 24)
+                          );
+                          return (
+                            <>
+                              <span>{formatFuture(diffDays)}</span>
+                              <span
+                                className={`text-xs ml-2 ${
+                                  theme === "light"
+                                    ? "text-gray-500"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {date.toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </span>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        "Add date"
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1239,127 +1513,176 @@ export default function CharacterDemo2({
                 {/* Next Meet Popup */}
                 {showNextMeetPopup && (
                   <div
-                    className={`absolute top-full right-0 mt-2 w-80 rounded-xl border shadow-lg p-4 z-50 ${
-                      theme === "light"
-                        ? "bg-white border-gray-200"
-                        : "bg-gray-800 border-gray-700"
-                    }`}
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    onClick={(event) => {
+                      if (event.target === event.currentTarget) {
+                        applyNextMeetDate(nextMeetDraft);
+                        setShowNextMeetPopup(false);
+                      }
+                    }}
                   >
-                    <div className="space-y-3">
-                      <div>
-                        <label
-                          className={`text-xs font-semibold mb-2 block ${
-                            theme === "light" ? "text-gray-500" : "text-gray-400"
-                          }`}
-                        >
-                          Pick a date
-                        </label>
-                        <input
-                          type="date"
-                          value={nextMeetDate || ""}
-                          onChange={(e) => setNextMeetDate(e.target.value)}
-                          className={`w-full px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
-                            theme === "light"
-                              ? "border-gray-300 bg-white text-gray-900 focus:border-blue-500"
-                              : "border-gray-600 bg-gray-900 text-gray-100 focus:border-cyan-500"
-                          } focus:outline-none`}
-                        />
-                      </div>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div
+                      className={`relative z-10 w-[92vw] max-w-sm rounded-xl border shadow-xl p-4 ${
+                        theme === "light"
+                          ? "bg-white border-gray-200"
+                          : "bg-gray-800 border-gray-700"
+                      }`}
+                    >
+                      <button
+                        onClick={() => setShowNextMeetPopup(false)}
+                        className={`absolute right-3 top-3 text-sm font-semibold ${
+                          theme === "light"
+                            ? "text-gray-500 hover:text-gray-700"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                        aria-label="Close"
+                      >
+                        ×
+                      </button>
+                      <div className="space-y-3">
+                        <div>
+                          <label
+                            className={`text-xs font-semibold mb-2 block ${
+                              theme === "light"
+                                ? "text-gray-500"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            Pick a date
+                          </label>
+                          <input
+                            type="date"
+                            value={nextMeetDraft || ""}
+                            onChange={(e) => setNextMeetDraft(e.target.value)}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
+                              theme === "light"
+                                ? "border-gray-300 bg-white text-gray-900 focus:border-blue-500"
+                                : "border-gray-600 bg-gray-900 text-gray-100 focus:border-cyan-500"
+                            } focus:outline-none`}
+                          />
+                        </div>
 
-                      <div>
-                        <label
-                          className={`text-xs font-semibold mb-2 block ${
-                            theme === "light" ? "text-gray-500" : "text-gray-400"
-                          }`}
-                        >
-                          Or set from today
-                        </label>
-                        <div className="flex gap-2 flex-wrap">
-                          <button
+                        <div>
+                          <label
+                            className={`text-xs font-semibold mb-2 block ${
+                              theme === "light"
+                                ? "text-gray-500"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            Or set from today
+                          </label>
+                          <div className="flex gap-2 flex-wrap">
+                            <button
                             onClick={() => {
                               const date = new Date();
                               date.setDate(date.getDate() + 7);
-                              setNextMeetDate(date.toISOString().split("T")[0]);
-                            }}
-                            className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
-                              theme === "light"
-                                ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                                : "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                            }`}
-                          >
-                            1 week
-                          </button>
-                          <button
+                              setNextMeetDraft(
+                                  date.toISOString().split("T")[0]
+                                );
+                              }}
+                              className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
+                                theme === "light"
+                                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                  : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                              }`}
+                            >
+                              1 week
+                            </button>
+                            <button
                             onClick={() => {
                               const date = new Date();
                               date.setDate(date.getDate() + 14);
-                              setNextMeetDate(date.toISOString().split("T")[0]);
-                            }}
-                            className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
-                              theme === "light"
-                                ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                                : "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                            }`}
-                          >
-                            2 weeks
-                          </button>
-                          <button
+                              setNextMeetDraft(
+                                  date.toISOString().split("T")[0]
+                                );
+                              }}
+                              className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
+                                theme === "light"
+                                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                  : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                              }`}
+                            >
+                              2 weeks
+                            </button>
+                            <button
                             onClick={() => {
                               const date = new Date();
                               date.setMonth(date.getMonth() + 1);
-                              setNextMeetDate(date.toISOString().split("T")[0]);
-                            }}
-                            className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
-                              theme === "light"
-                                ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                                : "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                            }`}
-                          >
-                            1 month
-                          </button>
-                          <button
+                              setNextMeetDraft(
+                                  date.toISOString().split("T")[0]
+                                );
+                              }}
+                              className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
+                                theme === "light"
+                                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                  : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                              }`}
+                            >
+                              1 month
+                            </button>
+                            <button
                             onClick={() => {
                               const date = new Date();
                               date.setMonth(date.getMonth() + 3);
-                              setNextMeetDate(date.toISOString().split("T")[0]);
-                            }}
-                            className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
-                              theme === "light"
-                                ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                                : "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                            }`}
-                          >
-                            3 months
-                          </button>
+                              setNextMeetDraft(
+                                  date.toISOString().split("T")[0]
+                                );
+                              }}
+                              className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
+                                theme === "light"
+                                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                  : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                              }`}
+                            >
+                              3 months
+                            </button>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex gap-2 pt-2">
-                        {nextMeetDate && (
+                        <div className="flex gap-2 pt-2">
+                          {nextMeetDraft && (
+                            <button
+                              onClick={() => {
+                                setNextMeetDraft(null);
+                              }}
+                              className={`flex-1 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                                theme === "light"
+                                  ? "text-red-600 hover:bg-red-50"
+                                  : "text-red-400 hover:bg-red-900/20"
+                              }`}
+                            >
+                              Delete
+                            </button>
+                          )}
                           <button
                             onClick={() => {
-                              setNextMeetDate(null);
+                              setNextMeetDraft(nextMeetDate);
                               setShowNextMeetPopup(false);
                             }}
                             className={`flex-1 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
                               theme === "light"
-                                ? "text-red-600 hover:bg-red-50"
-                                : "text-red-400 hover:bg-red-900/20"
+                                ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                : "bg-gray-700 hover:bg-gray-600 text-gray-300"
                             }`}
                           >
-                            Delete
+                            Cancel
                           </button>
-                        )}
-                        <button
-                          onClick={() => setShowNextMeetPopup(false)}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
-                            theme === "light"
-                              ? "bg-blue-500 hover:bg-blue-600 text-white"
-                              : "bg-cyan-600 hover:bg-cyan-500 text-white"
-                          }`}
-                        >
-                          Done
-                        </button>
+                          <button
+                            onClick={() => {
+                              applyNextMeetDate(nextMeetDraft);
+                              setShowNextMeetPopup(false);
+                            }}
+                            className={`flex-1 px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
+                              theme === "light"
+                                ? "bg-blue-500 hover:bg-blue-600 text-white"
+                                : "bg-cyan-600 hover:bg-cyan-500 text-white"
+                            }`}
+                          >
+                            Save
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -62,7 +62,6 @@ export default function Dashboard() {
     "name" | "location" | "lastContact" | "nextMeet"
   >("lastContact");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [activeFilter, setActiveFilter] = useState("overdue");
   const {
     value: quickContacts,
     setValue: setQuickContacts,
@@ -86,6 +85,19 @@ export default function Dashboard() {
       liveKeyPrefix: "live_circle_settings_",
       initialValue: getDefaultCircleSettings(),
     });
+  const {
+    value: contactFilterState,
+    setValue: setContactFilterState,
+  } = useScopedLocalStorage<{
+    mode: "all" | "overdue" | "circles";
+    circles: string[];
+  }>({
+    demoKey: "demo_contact_filters",
+    liveKeyPrefix: "live_contact_filters_",
+    initialValue: { mode: "all", circles: [] },
+  });
+  const activeFilter = contactFilterState.mode;
+  const selectedCircleFilters = contactFilterState.circles;
   const [draftCircleSettings, setDraftCircleSettings] = useState<CircleSetting[]>(
     circleSettings
   );
@@ -663,16 +675,14 @@ export default function Dashboard() {
     if (activeFilter === "overdue") {
       return Boolean(contact.nextMeetDate);
     }
-    return contact.tags.some(
-      (tag) => tag.toLowerCase() === activeFilter.toLowerCase()
-    );
-  });
-  useEffect(() => {
-    if (activeFilter === "overdue" && filteredContacts.length === 0) {
-      setActiveFilter("all");
-      setContactsPage(1);
+    if (selectedCircleFilters.length === 0) {
+      return true;
     }
-  }, [activeFilter, filteredContacts.length]);
+    const selectedSet = new Set(
+      selectedCircleFilters.map((filter) => filter.toLowerCase())
+    );
+    return contact.tags.some((tag) => selectedSet.has(tag.toLowerCase()));
+  });
   const totalContactPages = Math.max(
     1,
     Math.ceil(filteredContacts.length / contactsPerPage)
@@ -723,16 +733,31 @@ export default function Dashboard() {
     })),
   ];
   useEffect(() => {
-    const allowedFilters = new Set([
-      "overdue",
-      "all",
-      ...tagFilters.map((filter) => filter.key),
-    ]);
-    if (!allowedFilters.has(activeFilter)) {
-      setActiveFilter("all");
-      setContactsPage(1);
-    }
-  }, [activeFilter, tagFilters]);
+    const allowedCircleFilters = new Set(
+      tagFilters.map((filter) => filter.key)
+    );
+    setContactFilterState((current) => {
+      const mode =
+        current.mode === "overdue" || current.mode === "circles"
+          ? current.mode
+          : "all";
+      const nextCircles = current.circles.filter((key) =>
+        allowedCircleFilters.has(key)
+      );
+      const nextMode =
+        mode === "circles" && nextCircles.length === 0 ? "all" : mode;
+      if (
+        nextMode === current.mode &&
+        nextCircles.length === current.circles.length
+      ) {
+        return current;
+      }
+      return {
+        mode: nextMode,
+        circles: nextCircles,
+      };
+    });
+  }, [setContactFilterState, tagFilters]);
 
   return (
     <div className="min-h-screen transition-colors duration-300 flex flex-col">
@@ -851,7 +876,10 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => {
-                  setActiveFilter("overdue");
+                  setContactFilterState((current) => ({
+                    mode: "overdue",
+                    circles: [],
+                  }));
                   setContactsPage(1);
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
@@ -877,11 +905,22 @@ export default function Dashboard() {
                 <button
                   key={filter.key}
                   onClick={() => {
-                    setActiveFilter(filter.key);
+                    setContactFilterState((current) => {
+                      const key = filter.key.toLowerCase();
+                      const isActive = current.circles.includes(key);
+                      const nextCircles = isActive
+                        ? current.circles.filter((item) => item !== key)
+                        : [...current.circles, key];
+                      return {
+                        mode: nextCircles.length === 0 ? "all" : "circles",
+                        circles: nextCircles,
+                      };
+                    });
                     setContactsPage(1);
                   }}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
-                    activeFilter === filter.key
+                    activeFilter === "circles" &&
+                    selectedCircleFilters.includes(filter.key)
                       ? theme === "light"
                         ? "bg-blue-500 text-white"
                         : "bg-cyan-600 text-white"
@@ -895,7 +934,10 @@ export default function Dashboard() {
               ))}
               <button
                 onClick={() => {
-                  setActiveFilter("all");
+                  setContactFilterState((current) => ({
+                    mode: "all",
+                    circles: [],
+                  }));
                   setContactsPage(1);
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
