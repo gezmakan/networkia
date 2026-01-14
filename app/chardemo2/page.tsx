@@ -26,6 +26,10 @@ const profileFieldTemplates: ProfileField[] = [
   { id: "phone", label: "Phone", value: "", type: "text" },
   { id: "work", label: "Work", value: "", subValue: "", type: "text" },
   { id: "website", label: "Website", value: "", type: "text" },
+  { id: "linkedin", label: "LinkedIn", value: "", type: "text" },
+  { id: "twitter", label: "Twitter", value: "", type: "text" },
+  { id: "instagram", label: "Instagram", value: "", type: "text" },
+  { id: "github", label: "GitHub", value: "", type: "text" },
   { id: "status", label: "Status", value: "", type: "text" },
   { id: "spouse", label: "Spouse", value: "", subValue: "", type: "text" },
   { id: "kids", label: "Kids", value: "", type: "text" },
@@ -44,6 +48,8 @@ const demoProfileDefaults = {
   tags: ["Friend"],
   lastContactDaysAgo: 3,
   nextMeetDate: "2026-01-24",
+  personalNotes:
+    "Incredibly thoughtful and deliberate in everything he does. Doesn't just act or direct - he thinks deeply about the meaning and impact of stories.\n\nReally cares about environmental issues, not just as talking points but genuinely invested. Started a solar company and does real work in conservation. Appreciates when you engage on those topics.\n\nNot someone who likes small talk. Prefers deep conversations about ideas, philosophy, or specific projects. Once you get him talking about film technique or adaptation, he's fascinating.",
   fields: [
     { id: "email", label: "Email", value: "ed.norton@gmail.com", type: "text" },
     { id: "phone", label: "Phone", value: "+1 (310) 555-8834", type: "text" },
@@ -55,6 +61,15 @@ const demoProfileDefaults = {
       type: "text",
     },
     { id: "website", label: "Website", value: "edwardnorton.com", type: "text" },
+    {
+      id: "linkedin",
+      label: "LinkedIn",
+      value: "linkedin.com/in/edwardnorton",
+      type: "text",
+    },
+    { id: "twitter", label: "Twitter", value: "@ednorton", type: "text" },
+    { id: "instagram", label: "Instagram", value: "@edwardnorton", type: "text" },
+    { id: "github", label: "GitHub", value: "", type: "text" },
     { id: "status", label: "Status", value: "Married", type: "text" },
     {
       id: "spouse",
@@ -130,6 +145,7 @@ type StoredContact = {
   daysAgo: number;
   profileFields: ProfileField[];
   nextMeetDate: string | null;
+  personalNotes?: string;
 };
 
 type QuickContact = {
@@ -158,6 +174,11 @@ export default function CharacterDemo2({
   const [nextMeetDate, setNextMeetDate] = useState<string | null>(null);
   const [lastContactDaysAgo, setLastContactDaysAgo] = useState<number | null>(null);
   const [isDemoProfile, setIsDemoProfile] = useState(false);
+  const [personalNotes, setPersonalNotes] = useState("");
+  const [personalNotesDraft, setPersonalNotesDraft] = useState("");
+  const hasPersonalNotes = personalNotes.trim().length > 0;
+  const hasExpandableNotes =
+    personalNotes.trim().length > 220 || personalNotes.includes("\n\n");
   const [contactId, setContactId] = useState<string | null>(null);
   const [isNewContact, setIsNewContact] = useState(false);
   const [isThoughtsExpanded, setIsThoughtsExpanded] = useState(false);
@@ -389,6 +410,19 @@ export default function CharacterDemo2({
   const saveStoredContacts = (contacts: StoredContact[]) => {
     setStoredContacts(contacts);
   };
+  const updateStoredContact = (
+    id: string | null,
+    updater: (contact: StoredContact) => StoredContact
+  ) => {
+    if (!id) {
+      return;
+    }
+    const stored = loadStoredContacts();
+    const next = stored.map((contact) =>
+      contact.id === id ? updater(contact) : contact
+    );
+    saveStoredContacts(next);
+  };
   const handleExportCalendar = () => {
     const storedContacts = loadStoredContacts();
     const events: { uid: string; summary: string; date: Date; rrule?: string }[] =
@@ -479,6 +513,8 @@ export default function CharacterDemo2({
       );
       setNextMeetDate(null);
       setLastContactDaysAgo(null);
+      setPersonalNotes("");
+      setPersonalNotesDraft("");
       setIsEditingProfile(true);
       return;
     }
@@ -518,6 +554,8 @@ export default function CharacterDemo2({
       setLastContactDaysAgo(
         typeof storedContact.daysAgo === "number" ? storedContact.daysAgo : null
       );
+      setPersonalNotes(storedContact.personalNotes ?? "");
+      setPersonalNotesDraft(storedContact.personalNotes ?? "");
       return;
     }
 
@@ -536,6 +574,8 @@ export default function CharacterDemo2({
         setProfileFields(ensureProfileFields(demoProfileDefaults.fields));
         setLastContactDaysAgo(demoProfileDefaults.lastContactDaysAgo);
         setNextMeetDate(demoProfileDefaults.nextMeetDate);
+        setPersonalNotes(demoProfileDefaults.personalNotes);
+        setPersonalNotesDraft(demoProfileDefaults.personalNotes);
       }
     }
     setIsNewContact(false);
@@ -843,6 +883,7 @@ export default function CharacterDemo2({
                             daysAgo: 0,
                             profileFields,
                             nextMeetDate,
+                            personalNotes,
                           };
                           const nextContacts = storedContacts.some(
                             (contact) => contact.id === newId
@@ -1029,11 +1070,12 @@ export default function CharacterDemo2({
                   Personal notes
                 </h2>
                 {!isEditingThoughts ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditingThoughts(true);
-                    }}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPersonalNotesDraft(personalNotes);
+                        setIsEditingThoughts(true);
+                      }}
                     className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-all duration-200 ${
                       hoveredCard === 'thoughts' ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     } ${
@@ -1049,6 +1091,7 @@ export default function CharacterDemo2({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        setPersonalNotesDraft(personalNotes);
                         setIsEditingThoughts(false);
                       }}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
@@ -1062,6 +1105,11 @@ export default function CharacterDemo2({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        setPersonalNotes(personalNotesDraft);
+                        updateStoredContact(contactId, (contact) => ({
+                          ...contact,
+                          personalNotes: personalNotesDraft,
+                        }));
                         setIsEditingThoughts(false);
                       }}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
@@ -1080,27 +1128,30 @@ export default function CharacterDemo2({
               <div
                 className={`text-base leading-relaxed ${
                   theme === "light" ? "text-gray-700" : "text-gray-300"
-                } ${isThoughtsExpanded ? "" : "line-clamp-4"}`}
+                } ${hasExpandableNotes && !isThoughtsExpanded ? "line-clamp-4" : ""}`}
               >
-                {!isDemoProfile ? (
+                {isEditingThoughts ? (
+                  <textarea
+                    value={personalNotesDraft}
+                    onChange={(event) => setPersonalNotesDraft(event.target.value)}
+                    className={`min-h-[140px] w-full rounded-lg border px-3 py-2 text-sm ${
+                      theme === "light"
+                        ? "border-gray-300 bg-white text-gray-900 focus:border-blue-500"
+                        : "border-gray-700 bg-gray-900 text-gray-100 focus:border-cyan-500"
+                    } focus:outline-none`}
+                    placeholder="Write your personal notes..."
+                  />
+                ) : hasPersonalNotes ? (
+                  personalNotes
+                    .split(/\n\n+/)
+                    .map((paragraph, index) => <p key={index}>{paragraph}</p>)
+                ) : (
                   <p className="text-sm italic text-gray-500">
                     No impressions yet.
                   </p>
-                ) : (
-                  <>
-                    <p>
-                      Incredibly thoughtful and deliberate in everything he does. Doesn't just act or direct - he thinks deeply about the meaning and impact of stories.
-                    </p>
-                    <p>
-                      Really cares about environmental issues, not just as talking points but genuinely invested. Started a solar company and does real work in conservation. Appreciates when you engage on those topics.
-                    </p>
-                    <p>
-                      Not someone who likes small talk. Prefers deep conversations about ideas, philosophy, or specific projects. Once you get him talking about film technique or adaptation, he's fascinating.
-                    </p>
-                  </>
                 )}
               </div>
-              {isDemoProfile && (
+              {hasExpandableNotes && !isEditingThoughts && (
                 <button
                   onClick={() => setIsThoughtsExpanded((open) => !open)}
                   className={`mt-3 text-xs font-semibold ${
