@@ -14,6 +14,8 @@ networkia/
 │   ├── page.tsx                    # Dashboard (uses scoped storage)
 │   ├── contacts/page.tsx           # All contacts (uses scoped storage)
 │   └── chardemo2/page.tsx          # Contact profile (uses scoped storage)
+│   └── components/
+│       └── AppNavbar.tsx           # Shared navbar (search/theme/nav links)
 └── DATA_ISOLATION_GUIDE.md         # Complete documentation
 ```
 
@@ -37,6 +39,16 @@ const { value, setValue } = useScopedLocalStorage({
 - Logged out → `demo_` keys
 - Logged in → `live_${email}` keys
 - No manual key selection needed
+
+## Recent Product/UX Updates
+
+- Shared navbar across Dashboard + Contacts with search, theme toggle, and links.
+- Dashboard search now filters contacts by name, city, circles, and notes (overrides filters while searching).
+- Recent Activity now shows interaction notes + next meet dates and renders an empty state when no activity.
+- Contact profile supports interaction notes CRUD with confirmation on delete.
+- Filters: Dashboard circle filters are single-select; Contacts page supports multi-select.
+- Sorting on dashboard persists (last contact default ascending so “Today” is first; blanks sort last).
+- Demo data is treated as disposable; no migration to live DB will be built.
 
 ## How to Use
 

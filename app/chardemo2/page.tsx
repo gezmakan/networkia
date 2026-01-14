@@ -10,6 +10,7 @@ import {
   type CircleSetting,
 } from "@/lib/circle-settings";
 import { createContactSlug, matchesContactSlug } from "@/lib/contact-slug";
+import { AppNavbar } from "@/app/components/AppNavbar";
 
 type Theme = "light" | "dark";
 
@@ -231,6 +232,8 @@ export default function CharacterDemo2({
   const [isNewContact, setIsNewContact] = useState(false);
   const [isThoughtsExpanded, setIsThoughtsExpanded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   // Profile header info
   const [profileName, setProfileName] = useState("");
@@ -757,37 +760,20 @@ export default function CharacterDemo2({
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 transition-colors duration-300">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-              theme === "light"
-                ? "hover:bg-gray-100 text-gray-700"
-                : "hover:bg-gray-800 text-gray-300"
-            }`}
-          >
-            <span className="text-lg">←</span>
-            <span className="font-medium">Dashboard</span>
-          </Link>
-          <button
-            onClick={toggleTheme}
-            className={`px-4 py-2 rounded-lg transition-all duration-200 text-xl ${
-              theme === "light"
-                ? "bg-gray-100 hover:bg-gray-200 hover:scale-105"
-                : "bg-gray-800 hover:bg-gray-700 hover:scale-105"
-            }`}
-            aria-label="Toggle theme"
-          >
-            {theme === "light" ? "🌙" : "☀️"}
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen transition-colors duration-300">
+      <AppNavbar
+        theme={theme}
+        active="contacts"
+        isSearchOpen={isSearchOpen}
+        searchValue={searchValue}
+        setIsSearchOpen={setIsSearchOpen}
+        setSearchValue={setSearchValue}
+        onToggleTheme={toggleTheme}
+        session={session ?? null}
+      />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 pb-8 pt-10 md:px-8">
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8">
           {/* Left Sidebar - Profile & Contact */}

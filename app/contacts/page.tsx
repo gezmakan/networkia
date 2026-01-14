@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
 import {
   getDefaultCircleSettings,
@@ -25,6 +25,7 @@ type Contact = {
   daysOverdue?: number;
   isQuick?: boolean;
   notes?: string;
+  nextMeetDate?: string | null;
 };
 
 type StoredContact = Contact & {
@@ -54,6 +55,7 @@ export default function ContactsPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactLocation, setContactLocation] = useState("");
   const [contactNotes, setContactNotes] = useState("");
@@ -80,14 +82,20 @@ export default function ContactsPage() {
     initialValue: [],
   });
   const isDemoMode = fullContactsStorageKey.startsWith("demo_");
-  const { value: circleSettings } = useScopedLocalStorage<CircleSetting[]>({
-    demoKey: "demo_circle_settings",
-    liveKeyPrefix: "live_circle_settings_",
-    initialValue: getDefaultCircleSettings(),
-  });
+  const { value: circleSettings, setValue: setCircleSettings } =
+    useScopedLocalStorage<CircleSetting[]>({
+      demoKey: "demo_circle_settings",
+      liveKeyPrefix: "live_circle_settings_",
+      initialValue: getDefaultCircleSettings(),
+    });
+  const [draftCircleSettings, setDraftCircleSettings] =
+    useState<CircleSetting[]>(circleSettings);
   const activeCircles = circleSettings
     .filter((circle) => circle.isActive && circle.name.trim())
     .map((circle) => circle.name.trim());
+  const hasInvalidActiveCircle = draftCircleSettings.some(
+    (circle) => circle.isActive && !circle.name.trim()
+  );
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -106,9 +114,182 @@ export default function ContactsPage() {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
   };
+  const renameCircleTags = (oldName: string, newName: string) => {
+    const from = oldName.trim();
+    const to = newName.trim();
+    if (!from || !to) {
+      return;
+    }
+    if (from.toLowerCase() === to.toLowerCase()) {
+      return;
+    }
+    const renameTags = (tags: string[]) => {
+      const nextTags = tags.map((tag) =>
+        tag.toLowerCase() === from.toLowerCase() ? to : tag
+      );
+      return Array.from(new Set(nextTags));
+    };
+    setExtraContacts((current) =>
+      current.map((contact) => ({
+        ...contact,
+        tags: renameTags(contact.tags),
+      }))
+    );
+    setQuickContacts((current) =>
+      current.map((contact) => ({
+        ...contact,
+        tags: renameTags(contact.tags),
+      }))
+    );
+  };
+  const handleSaveCircleSettings = () => {
+    if (hasInvalidActiveCircle) {
+      return;
+    }
+    draftCircleSettings.forEach((draft) => {
+      const existing = circleSettings.find((item) => item.id === draft.id);
+      if (!existing) {
+        return;
+      }
+      if (!existing.name.trim() || !draft.name.trim()) {
+        return;
+      }
+      if (existing.name.trim() !== draft.name.trim()) {
+        renameCircleTags(existing.name, draft.name);
+      }
+    });
+    setCircleSettings(draftCircleSettings);
+    setIsSettingsOpen(false);
+  };
+
+  useEffect(() => {
+    if (isSettingsOpen) {
+      setDraftCircleSettings(circleSettings);
+    }
+  }, [circleSettings, isSettingsOpen]);
 
   const formatMonthDay = (value: Date) =>
     value.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const escapeIcsText = (value: string) =>
+    value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,");
+  const formatIcsDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+  };
+  const parseMonthDayValue = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split("-").map(Number);
+      if (!Number.isNaN(month) && !Number.isNaN(day)) {
+        return { month: month - 1, day };
+      }
+    }
+    const [monthLabel, dayLabel] = trimmed.split(" ");
+    const monthIndex = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ].indexOf(monthLabel);
+    const dayNumber = Number(dayLabel);
+    if (monthIndex < 0 || Number.isNaN(dayNumber)) {
+      return null;
+    }
+    return { month: monthIndex, day: dayNumber };
+  };
+  const buildCalendarIcs = (
+    events: { uid: string; summary: string; date: Date; rrule?: string }[]
+  ) => {
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Networkia//EN",
+      "CALSCALE:GREGORIAN",
+    ];
+    events.forEach((event) => {
+      lines.push("BEGIN:VEVENT");
+      lines.push(`UID:${escapeIcsText(event.uid)}`);
+      lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(event.date)}`);
+      lines.push(`SUMMARY:${escapeIcsText(event.summary)}`);
+      if (event.rrule) {
+        lines.push(event.rrule);
+      }
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return `${lines.join("\r\n")}\r\n`;
+  };
+  const handleExportCalendar = () => {
+    const events: { uid: string; summary: string; date: Date; rrule?: string }[] =
+      [];
+    const added = new Set<string>();
+    extraContacts.forEach((contact) => {
+      if (contact.nextMeetDate) {
+        const date = new Date(contact.nextMeetDate);
+        if (!Number.isNaN(date.getTime())) {
+          const key = `next-${contact.id}-${contact.nextMeetDate}`;
+          if (!added.has(key)) {
+            added.add(key);
+            events.push({
+              uid: `networkia-${key}`,
+              summary: `Next meet: ${contact.name}`,
+              date,
+            });
+          }
+        }
+      }
+      const birthdayField = contact.profileFields?.find(
+        (field) =>
+          field.id.toLowerCase() === "birthday" ||
+          field.label.toLowerCase() === "birthday"
+      );
+      if (!birthdayField?.value) {
+        return;
+      }
+      const parsed = parseMonthDayValue(birthdayField.value);
+      if (!parsed) {
+        return;
+      }
+      const now = new Date();
+      const date = new Date(now.getFullYear(), parsed.month, parsed.day);
+      const key = `bday-${contact.id}-${parsed.month}-${parsed.day}`;
+      if (added.has(key)) {
+        return;
+      }
+      added.add(key);
+      events.push({
+        uid: `networkia-${key}`,
+        summary: `Birthday: ${contact.name}`,
+        date,
+        rrule: "RRULE:FREQ=YEARLY",
+      });
+    });
+    if (!events.length) {
+      window.alert("No calendar dates to export yet.");
+      return;
+    }
+    const ics = buildCalendarIcs(events);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "networkia-calendar.ics";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
   const resetContactForm = () => {
     setContactName("");
     setContactLocation("");
@@ -378,6 +559,8 @@ export default function ContactsPage() {
   const getContactDaysAgo = (contact: Contact) =>
     typeof contact.daysAgo === "number" && !Number.isNaN(contact.daysAgo)
       ? contact.daysAgo
+      : !contact.lastContact?.trim()
+      ? Number.POSITIVE_INFINITY
       : getDaysAgoFromMonthDay(contact.lastContact);
   const formatRelative = (days: number) => {
     if (days <= 0) {
@@ -420,9 +603,14 @@ export default function ContactsPage() {
       if (sortKey === "lastContact") {
         const aValue = getContactDaysAgo(a);
         const bValue = getContactDaysAgo(b);
+        const aMissing = !Number.isFinite(aValue);
+        const bMissing = !Number.isFinite(bValue);
+        if (aMissing !== bMissing) {
+          return aMissing ? 1 : -1;
+        }
         return sortDirection === "desc"
-          ? aValue - bValue
-          : bValue - aValue;
+          ? bValue - aValue
+          : aValue - bValue;
       }
       if (sortKey === "location") {
         return sortDirection === "desc"
@@ -778,6 +966,290 @@ export default function ContactsPage() {
         </div>
       </div>
       </div>
+      <footer
+        className={`mt-16 border-t ${
+          theme === "light"
+            ? "bg-gray-50 border-gray-200"
+            : "bg-gray-900 border-gray-800"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex flex-col items-center gap-4">
+            {session && (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  className={`rounded-md px-2 py-1 transition-colors ${
+                    theme === "light"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-300 hover:bg-gray-800"
+                  }`}
+                  aria-label="Share"
+                >
+                  🔗
+                </button>
+                <button
+                  onClick={handleExportCalendar}
+                  className={`rounded-md px-2 py-1 transition-colors ${
+                    theme === "light"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-300 hover:bg-gray-800"
+                  }`}
+                  aria-label="Export calendar"
+                >
+                  📅
+                </button>
+                <span aria-hidden="true">🖨️</span>
+                <button
+                  onClick={() => setIsSettingsOpen(true)}
+                  className={`rounded-md px-2 py-1 transition-colors ${
+                    theme === "light"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-300 hover:bg-gray-800"
+                  }`}
+                  aria-label="Open settings"
+                >
+                  ⚙️
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-6">
+              <a
+                href="#"
+                className={`text-sm transition-colors ${
+                  theme === "light"
+                    ? "text-gray-600 hover:text-blue-600"
+                    : "text-gray-400 hover:text-cyan-400"
+                }`}
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="#"
+                className={`text-sm transition-colors ${
+                  theme === "light"
+                    ? "text-gray-600 hover:text-blue-600"
+                    : "text-gray-400 hover:text-cyan-400"
+                }`}
+              >
+                Terms of Service
+              </a>
+            </div>
+            <p
+              className={`text-xs ${
+                theme === "light" ? "text-gray-500" : "text-gray-500"
+              }`}
+            >
+              © 2026 Networkia
+            </p>
+          </div>
+        </div>
+      </footer>
+      {session && isSettingsOpen && (
+        <div
+          className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => {
+            if (hasInvalidActiveCircle) {
+              return;
+            }
+            setIsSettingsOpen(false);
+          }}
+        >
+          <div
+            className={`relative w-full max-w-2xl rounded-2xl border p-6 shadow-2xl ${
+              theme === "light"
+                ? "bg-white border-gray-200"
+                : "bg-gray-900 border-gray-800"
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                if (hasInvalidActiveCircle) {
+                  return;
+                }
+                setIsSettingsOpen(false);
+              }}
+              className={`absolute right-3 top-3 rounded-md px-2 py-1 text-lg transition-colors ${
+                theme === "light"
+                  ? "text-gray-500 hover:bg-gray-100"
+                  : "text-gray-400 hover:bg-gray-800"
+              } ${hasInvalidActiveCircle ? "opacity-40 cursor-not-allowed" : ""}`}
+              aria-label="Close settings"
+            >
+              ×
+            </button>
+            <h3
+              className={`text-lg font-semibold ${
+                theme === "light" ? "text-gray-900" : "text-gray-100"
+              }`}
+            >
+              Settings
+            </h3>
+            <div className="mt-4 space-y-4 text-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <div
+                  className={`${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
+                  Signed in as{" "}
+                  <span
+                    className={`${
+                      theme === "light" ? "text-gray-900" : "text-gray-100"
+                    }`}
+                  >
+                    {session.user?.name || "User"}
+                  </span>
+                  {session.user?.email && (
+                    <span
+                      className={`${
+                        theme === "light"
+                          ? "text-gray-600"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {" "}
+                      ({session.user.email})
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    theme === "light"
+                      ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                      : "bg-gray-700 text-gray-100 hover:bg-gray-600"
+                  }`}
+                >
+                  Log out
+                </button>
+              </div>
+              <div className="space-y-2">
+                <div
+                  className={`text-xs uppercase tracking-wide ${
+                    theme === "light" ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  Circles (max 10)
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {draftCircleSettings.map((circle) => {
+                    const isNameEmpty = circle.name.trim().length === 0;
+                    return (
+                      <div
+                        key={circle.id}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors ${
+                          circle.isActive && isNameEmpty
+                            ? theme === "light"
+                              ? "border-red-300 bg-red-50"
+                              : "border-red-700 bg-red-900/20"
+                            : theme === "light"
+                            ? "border-gray-200 bg-white"
+                            : "border-gray-700 bg-gray-800"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDraftCircleSettings((current) =>
+                              current.map((item) =>
+                                item.id === circle.id
+                                  ? { ...item, isActive: !item.isActive }
+                                  : item
+                              )
+                            )
+                          }
+                          className={`h-5 w-5 rounded border transition-all ${
+                            circle.isActive
+                              ? theme === "light"
+                                ? "bg-blue-500 border-blue-500"
+                                : "bg-cyan-600 border-cyan-600"
+                              : theme === "light"
+                              ? "border-gray-300"
+                              : "border-gray-600"
+                          }`}
+                          aria-label={`Toggle circle ${circle.name || "unnamed"}`}
+                        />
+                        <input
+                          type="text"
+                          value={circle.name}
+                          onChange={(event) =>
+                            setDraftCircleSettings((current) =>
+                              current.map((item) =>
+                                item.id === circle.id
+                                  ? { ...item, name: event.target.value }
+                                  : item
+                              )
+                            )
+                          }
+                          className={`flex-1 bg-transparent text-sm focus:outline-none ${
+                            circle.isActive && isNameEmpty
+                              ? theme === "light"
+                                ? "text-red-700 placeholder-red-400"
+                                : "text-red-300 placeholder-red-500"
+                              : theme === "light"
+                              ? "text-gray-900 placeholder-gray-400"
+                              : "text-gray-100 placeholder-gray-500"
+                          }`}
+                          placeholder={
+                            circle.isActive ? "Name this circle" : "Inactive"
+                          }
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <p
+                  className={`text-xs ${
+                    hasInvalidActiveCircle
+                      ? theme === "light"
+                        ? "text-red-500"
+                        : "text-red-400"
+                      : theme === "light"
+                      ? "text-gray-500"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {hasInvalidActiveCircle
+                    ? "Active circles need a name before you can close settings."
+                    : 'Name a circle to enable it. "Just Met" is automatic for quick contacts.'}
+                </p>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    if (hasInvalidActiveCircle) {
+                      return;
+                    }
+                    setIsSettingsOpen(false);
+                  }}
+                  className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                    theme === "light"
+                      ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                      : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                  } ${
+                    hasInvalidActiveCircle ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCircleSettings}
+                  className={`px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
+                    theme === "light"
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "bg-cyan-600 hover:bg-cyan-500 text-white"
+                  } ${
+                    hasInvalidActiveCircle ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {isContactModalOpen && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-4"
