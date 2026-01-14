@@ -124,12 +124,187 @@ export default function Dashboard() {
     if (!quickContact) {
       return;
     }
-    setContactMode("quick");
     setEditingQuickId(quickContact.id);
     setContactName(quickContact.name);
     setContactLocation(quickContact.location);
     setContactNotes(quickContact.notes);
     setIsContactModalOpen(true);
+  };
+  const escapeIcsText = (value: string) =>
+    value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,");
+  const formatIcsDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+  };
+  const parseMonthDayValue = (value: string) => {
+    const parts = value.trim().split(/\s+/);
+    if (parts.length < 2) {
+      return null;
+    }
+    const monthMap: Record<string, number> = {
+      jan: 0,
+      january: 0,
+      feb: 1,
+      february: 1,
+      mar: 2,
+      march: 2,
+      apr: 3,
+      april: 3,
+      may: 4,
+      jun: 5,
+      june: 5,
+      jul: 6,
+      july: 6,
+      aug: 7,
+      august: 7,
+      sep: 8,
+      sept: 8,
+      september: 8,
+      oct: 9,
+      october: 9,
+      nov: 10,
+      november: 10,
+      dec: 11,
+      december: 11,
+    };
+    const month = monthMap[parts[0].toLowerCase()];
+    const day = Number(parts[1]);
+    if (month === undefined || Number.isNaN(day)) {
+      return null;
+    }
+    return { month, day };
+  };
+  const buildCalendarIcs = (
+    events: { uid: string; summary: string; date: Date; rrule?: string }[]
+  ) => {
+    const stamp = new Date()
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}Z$/, "Z");
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Networkia//EN",
+      "CALSCALE:GREGORIAN",
+    ];
+    events.forEach((event) => {
+      lines.push("BEGIN:VEVENT");
+      lines.push(`UID:${escapeIcsText(event.uid)}`);
+      lines.push(`DTSTAMP:${stamp}`);
+      lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(event.date)}`);
+      lines.push(`SUMMARY:${escapeIcsText(event.summary)}`);
+      if (event.rrule) {
+        lines.push(event.rrule);
+      }
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return `${lines.join("\r\n")}\r\n`;
+  };
+  const handleExportCalendar = () => {
+    const stored = localStorage.getItem(fullContactsKey);
+    const storedContacts = stored ? (JSON.parse(stored) as Array<{
+      id: string;
+      name: string;
+      profileFields?: { id: string; label: string; value: string }[];
+      nextMeetDate?: string | null;
+    }>) : [];
+    const events: { uid: string; summary: string; date: Date; rrule?: string }[] =
+      [];
+    const added = new Set<string>();
+    allContacts.forEach((contact) => {
+      if (!contact.nextMeetDate) {
+        return;
+      }
+      const date = new Date(contact.nextMeetDate);
+      if (Number.isNaN(date.getTime())) {
+        return;
+      }
+      const key = `next-${contact.id}-${contact.nextMeetDate}`;
+      if (added.has(key)) {
+        return;
+      }
+      added.add(key);
+      events.push({
+        uid: `networkia-${key}`,
+        summary: `Next meet: ${contact.name}`,
+        date,
+      });
+    });
+    storedContacts.forEach((contact) => {
+      const birthdayField = contact.profileFields?.find(
+        (field) =>
+          field.id.toLowerCase() === "birthday" ||
+          field.label.toLowerCase() === "birthday"
+      );
+      if (!birthdayField || !birthdayField.value) {
+        return;
+      }
+      const parsed = parseMonthDayValue(birthdayField.value);
+      if (!parsed) {
+        return;
+      }
+      const now = new Date();
+      const date = new Date(now.getFullYear(), parsed.month, parsed.day);
+      const key = `bday-${contact.id}-${parsed.month}-${parsed.day}`;
+      if (added.has(key)) {
+        return;
+      }
+      added.add(key);
+      events.push({
+        uid: `networkia-${key}`,
+        summary: `Birthday: ${contact.name}`,
+        date,
+        rrule: "RRULE:FREQ=YEARLY",
+      });
+    });
+    if (!events.length) {
+      window.alert("No calendar dates to export yet.");
+      return;
+    }
+    const ics = buildCalendarIcs(events);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "networkia-calendar.ics";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const getDaysAgoFromMonthDay = (value: string) => {
+    const [month, day] = value.split(" ");
+    const monthIndex = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ].indexOf(month);
+    const dayNumber = Number(day);
+    if (monthIndex < 0 || Number.isNaN(dayNumber)) {
+      return 0;
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let target = new Date(now.getFullYear(), monthIndex, dayNumber);
+    if (target.getTime() > today.getTime()) {
+      target = new Date(now.getFullYear() - 1, monthIndex, dayNumber);
+    }
+    return Math.max(
+      0,
+      Math.round(
+        (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)
+      )
+    );
   };
 
   const overdueContacts: Contact[] = [
@@ -353,7 +528,7 @@ export default function Dashboard() {
     tags: ["Quick", ...contact.tags],
     location: contact.location || "—",
     lastContact: contact.lastContact,
-    daysAgo: 0,
+    daysAgo: getDaysAgoFromMonthDay(contact.lastContact),
     isQuick: true,
     notes: contact.notes,
   }));
@@ -363,26 +538,10 @@ export default function Dashboard() {
     ...quickContactsAsContacts,
   ];
   const contactsPerPage = 10;
-  const parseMonthDay = (value: string) => {
-    const [month, day] = value.split(" ");
-    const monthIndex = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ].indexOf(month);
-    const dayNumber = Number(day);
-    const year = new Date().getFullYear();
-    return new Date(year, Math.max(monthIndex, 0), dayNumber).getTime();
-  };
+  const getContactDaysAgo = (contact: Contact) =>
+    typeof contact.daysAgo === "number" && !Number.isNaN(contact.daysAgo)
+      ? contact.daysAgo
+      : getDaysAgoFromMonthDay(contact.lastContact);
   const formatRelative = (days: number) => {
     if (days <= 0) {
       return "Today";
@@ -435,9 +594,11 @@ export default function Dashboard() {
   );
   const sortedContacts = [...filteredContacts].sort((a, b) => {
     if (sortKey === "lastContact") {
+      const aValue = getContactDaysAgo(a);
+      const bValue = getContactDaysAgo(b);
       return sortDirection === "desc"
-        ? parseMonthDay(b.lastContact) - parseMonthDay(a.lastContact)
-        : parseMonthDay(a.lastContact) - parseMonthDay(b.lastContact);
+        ? aValue - bValue
+        : bValue - aValue;
     }
     if (sortKey === "nextMeet") {
       const aDate = a.nextMeetDate ? new Date(a.nextMeetDate).getTime() : 0;
@@ -730,9 +891,9 @@ export default function Dashboard() {
                       ? "text-gray-500 hover:text-gray-700"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
-                  aria-label="Sort by location"
+                  aria-label="Sort by city"
                 >
-                  Location
+                  City
                   {sortKey === "location" && (
                     <span aria-hidden="true">
                       {sortDirection === "desc" ? "↓" : "↑"}
@@ -1002,6 +1163,17 @@ export default function Dashboard() {
                 >
                   🔗
                 </button>
+                <button
+                  onClick={handleExportCalendar}
+                  className={`rounded-md px-2 py-1 transition-colors ${
+                    theme === "light"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-300 hover:bg-gray-800"
+                  }`}
+                  aria-label="Export calendar"
+                >
+                  📅
+                </button>
                 <span aria-hidden="true">🖨️</span>
                 <button
                   onClick={() => setIsSettingsOpen(true)}
@@ -1043,7 +1215,7 @@ export default function Dashboard() {
                 theme === "light" ? "text-gray-500" : "text-gray-500"
               }`}
             >
-              © 2026 Networkia. All rights reserved.
+              © 2026 Networkia
             </p>
           </div>
         </div>
@@ -1210,7 +1382,7 @@ export default function Dashboard() {
                     theme === "light" ? "text-gray-500" : "text-gray-400"
                   }`}
                 >
-                  Location
+                  City
                 </span>
                 <input
                   type="text"
@@ -1221,7 +1393,7 @@ export default function Dashboard() {
                       ? "border-gray-300 bg-white text-gray-900"
                       : "border-gray-700 bg-gray-900 text-gray-100"
                   }`}
-                  placeholder="Where are they based?"
+                  placeholder="Which city?"
                 />
               </label>
               <label className="grid gap-1">

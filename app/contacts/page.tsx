@@ -280,6 +280,39 @@ export default function ContactsPage() {
       status: "overdue",
     },
   ];
+  const getDaysAgoFromMonthDay = (value: string) => {
+    const [month, day] = value.split(" ");
+    const monthIndex = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ].indexOf(month);
+    const dayNumber = Number(day);
+    if (monthIndex < 0 || Number.isNaN(dayNumber)) {
+      return 0;
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let target = new Date(now.getFullYear(), monthIndex, dayNumber);
+    if (target.getTime() > today.getTime()) {
+      target = new Date(now.getFullYear() - 1, monthIndex, dayNumber);
+    }
+    return Math.max(
+      0,
+      Math.round(
+        (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)
+      )
+    );
+  };
   const quickContactsAsContacts: Contact[] = quickContacts.map((contact) => ({
     id: contact.id,
     initials: contact.name
@@ -292,7 +325,7 @@ export default function ContactsPage() {
     tags: ["Quick", ...contact.tags],
     location: contact.location || "—",
     lastContact: contact.lastContact,
-    daysAgo: 0,
+    daysAgo: getDaysAgoFromMonthDay(contact.lastContact),
     isQuick: true,
     notes: contact.notes,
   }));
@@ -313,26 +346,10 @@ export default function ContactsPage() {
     : circles;
   const visibleCircles = orderedCircles.slice(0, 5);
 
-  const parseMonthDay = (value: string) => {
-    const [month, day] = value.split(" ");
-    const monthIndex = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ].indexOf(month);
-    const dayNumber = Number(day);
-    const year = new Date().getFullYear();
-    return new Date(year, Math.max(monthIndex, 0), dayNumber).getTime();
-  };
+  const getContactDaysAgo = (contact: Contact) =>
+    typeof contact.daysAgo === "number" && !Number.isNaN(contact.daysAgo)
+      ? contact.daysAgo
+      : getDaysAgoFromMonthDay(contact.lastContact);
   const formatRelative = (days: number) => {
     if (days <= 0) {
       return "Today";
@@ -360,9 +377,11 @@ export default function ContactsPage() {
     const sorted = [...filteredContacts];
     sorted.sort((a, b) => {
       if (sortKey === "lastContact") {
+        const aValue = getContactDaysAgo(a);
+        const bValue = getContactDaysAgo(b);
         return sortDirection === "desc"
-          ? parseMonthDay(b.lastContact) - parseMonthDay(a.lastContact)
-          : parseMonthDay(a.lastContact) - parseMonthDay(b.lastContact);
+          ? aValue - bValue
+          : bValue - aValue;
       }
       if (sortKey === "location") {
         return sortDirection === "desc"
@@ -419,7 +438,7 @@ export default function ContactsPage() {
                 theme === "light" ? "text-gray-500" : "text-gray-400"
               }`}
             >
-              Location
+              City
             </span>
             <select
               value={locationFilter}
@@ -524,9 +543,9 @@ export default function ContactsPage() {
                     ? "text-gray-500 hover:text-gray-700"
                     : "text-gray-400 hover:text-gray-200"
                 }`}
-                aria-label="Sort by location"
+                aria-label="Sort by city"
               >
-                Location
+                City
                 {sortKey === "location" && (
                   <span aria-hidden="true">
                     {sortDirection === "desc" ? "↓" : "↑"}
@@ -715,7 +734,7 @@ export default function ContactsPage() {
                     theme === "light" ? "text-gray-500" : "text-gray-400"
                   }`}
                 >
-                  Location
+                  City
                 </span>
                 <input
                   type="text"
@@ -726,7 +745,7 @@ export default function ContactsPage() {
                       ? "border-gray-300 bg-white text-gray-900"
                       : "border-gray-700 bg-gray-900 text-gray-100"
                   }`}
-                  placeholder="Where are they based?"
+                  placeholder="Which city?"
                 />
               </label>
               <label className="grid gap-1">

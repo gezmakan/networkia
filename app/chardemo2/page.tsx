@@ -83,6 +83,79 @@ export default function CharacterDemo2() {
     }
     return `${Math.floor(days / 30)}mo ago`;
   };
+  const escapeIcsText = (value: string) =>
+    value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,");
+  const formatIcsDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+  };
+  const parseMonthDayValue = (value: string) => {
+    const parts = value.trim().split(/\s+/);
+    if (parts.length < 2) {
+      return null;
+    }
+    const monthMap: Record<string, number> = {
+      jan: 0,
+      january: 0,
+      feb: 1,
+      february: 1,
+      mar: 2,
+      march: 2,
+      apr: 3,
+      april: 3,
+      may: 4,
+      jun: 5,
+      june: 5,
+      jul: 6,
+      july: 6,
+      aug: 7,
+      august: 7,
+      sep: 8,
+      sept: 8,
+      september: 8,
+      oct: 9,
+      october: 9,
+      nov: 10,
+      november: 10,
+      dec: 11,
+      december: 11,
+    };
+    const month = monthMap[parts[0].toLowerCase()];
+    const day = Number(parts[1]);
+    if (month === undefined || Number.isNaN(day)) {
+      return null;
+    }
+    return { month, day };
+  };
+  const buildCalendarIcs = (
+    events: { uid: string; summary: string; date: Date; rrule?: string }[]
+  ) => {
+    const stamp = new Date()
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}Z$/, "Z");
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Networkia//EN",
+      "CALSCALE:GREGORIAN",
+    ];
+    events.forEach((event) => {
+      lines.push("BEGIN:VEVENT");
+      lines.push(`UID:${escapeIcsText(event.uid)}`);
+      lines.push(`DTSTAMP:${stamp}`);
+      lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(event.date)}`);
+      lines.push(`SUMMARY:${escapeIcsText(event.summary)}`);
+      if (event.rrule) {
+        lines.push(event.rrule);
+      }
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return `${lines.join("\r\n")}\r\n`;
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
@@ -129,6 +202,65 @@ export default function CharacterDemo2() {
   };
   const saveStoredContacts = (contacts: StoredContact[]) => {
     localStorage.setItem(contactsKey, JSON.stringify(contacts));
+  };
+  const handleExportCalendar = () => {
+    const storedContacts = loadStoredContacts();
+    const events: { uid: string; summary: string; date: Date; rrule?: string }[] =
+      [];
+    const added = new Set<string>();
+    storedContacts.forEach((contact) => {
+      if (contact.nextMeetDate) {
+        const date = new Date(contact.nextMeetDate);
+        if (!Number.isNaN(date.getTime())) {
+          const key = `next-${contact.id}-${contact.nextMeetDate}`;
+          if (!added.has(key)) {
+            added.add(key);
+            events.push({
+              uid: `networkia-${key}`,
+              summary: `Next meet: ${contact.name}`,
+              date,
+            });
+          }
+        }
+      }
+      const birthdayField = contact.profileFields?.find(
+        (field) =>
+          field.id.toLowerCase() === "birthday" ||
+          field.label.toLowerCase() === "birthday"
+      );
+      if (!birthdayField?.value) {
+        return;
+      }
+      const parsed = parseMonthDayValue(birthdayField.value);
+      if (!parsed) {
+        return;
+      }
+      const now = new Date();
+      const date = new Date(now.getFullYear(), parsed.month, parsed.day);
+      const key = `bday-${contact.id}-${parsed.month}-${parsed.day}`;
+      if (added.has(key)) {
+        return;
+      }
+      added.add(key);
+      events.push({
+        uid: `networkia-${key}`,
+        summary: `Birthday: ${contact.name}`,
+        date,
+        rrule: "RRULE:FREQ=YEARLY",
+      });
+    });
+    if (!events.length) {
+      window.alert("No calendar dates to export yet.");
+      return;
+    }
+    const ics = buildCalendarIcs(events);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "networkia-calendar.ics";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
@@ -294,7 +426,7 @@ export default function CharacterDemo2() {
                       type="text"
                       value={profileLocation}
                       onChange={(e) => setProfileLocation(e.target.value)}
-                      placeholder="Location"
+                      placeholder="City"
                       className={`text-sm text-center w-full px-2 py-1 rounded border ${
                         theme === "light"
                           ? "text-gray-500 border-gray-300 bg-white focus:border-blue-500 placeholder-gray-400"
@@ -1257,6 +1389,17 @@ export default function CharacterDemo2() {
                 >
                   🔗
                 </button>
+                <button
+                  onClick={handleExportCalendar}
+                  className={`rounded-md px-2 py-1 transition-colors ${
+                    theme === "light"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-300 hover:bg-gray-800"
+                  }`}
+                  aria-label="Export calendar"
+                >
+                  📅
+                </button>
                 <span aria-hidden="true">🖨️</span>
                 <button
                   onClick={() => setIsSettingsOpen(true)}
@@ -1298,7 +1441,7 @@ export default function CharacterDemo2() {
                 theme === "light" ? "text-gray-500" : "text-gray-500"
               }`}
             >
-              © 2026 Networkia. All rights reserved.
+              © 2026 Networkia
             </p>
           </div>
         </div>
