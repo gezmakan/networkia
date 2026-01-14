@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
 import {
   getDefaultCircleSettings,
   type CircleSetting,
 } from "@/lib/circle-settings";
 import { createContactSlug } from "@/lib/contact-slug";
+import { AppNavbar } from "@/app/components/AppNavbar";
 
 type Theme = "light" | "dark";
 
@@ -49,6 +51,8 @@ export default function ContactsPage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [locationFilter, setLocationFilter] = useState("All");
   const [circleFilters, setCircleFilters] = useState<string[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactLocation, setContactLocation] = useState("");
@@ -84,6 +88,7 @@ export default function ContactsPage() {
   const activeCircles = circleSettings
     .filter((circle) => circle.isActive && circle.name.trim())
     .map((circle) => circle.name.trim());
+  const { data: session } = useSession();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
@@ -95,6 +100,12 @@ export default function ContactsPage() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
 
   const formatMonthDay = (value: Date) =>
     value.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -381,18 +392,27 @@ export default function ContactsPage() {
     return `${Math.floor(days / 30)}mo ago`;
   };
 
+  const searchTerm = searchValue.trim().toLowerCase();
   const filteredContacts = useMemo(() => {
     return allContacts.filter((contact) => {
+      if (searchTerm) {
+        const tagsText = contact.tags.join(" ").toLowerCase();
+        const noteText = contact.notes ? contact.notes.toLowerCase() : "";
+        return (
+          contact.name.toLowerCase().includes(searchTerm) ||
+          contact.location.toLowerCase().includes(searchTerm) ||
+          tagsText.includes(searchTerm) ||
+          noteText.includes(searchTerm)
+        );
+      }
       const matchesLocation =
         locationFilter === "All" || contact.location === locationFilter;
       const matchesCircle =
         circleFilters.length === 0 ||
-        contact.tags.some((tag) =>
-          circleFilters.includes(tag.toLowerCase())
-        );
+        contact.tags.some((tag) => circleFilters.includes(tag.toLowerCase()));
       return matchesLocation && matchesCircle;
     });
-  }, [allContacts, locationFilter, circleFilters]);
+  }, [allContacts, locationFilter, circleFilters, searchTerm]);
 
   const sortedContacts = useMemo(() => {
     const sorted = [...filteredContacts];
@@ -417,40 +437,42 @@ export default function ContactsPage() {
   }, [filteredContacts, sortDirection, sortKey]);
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href="/"
-            className={`text-sm font-medium transition-colors ${
-              theme === "light"
-                ? "text-gray-600 hover:text-blue-600"
-                : "text-gray-300 hover:text-cyan-400"
-            }`}
-          >
-            ← Back to Dashboard
-          </Link>
-          <h1
-            className={`text-xl font-semibold ${
-              theme === "light" ? "text-gray-900" : "text-gray-100"
-            }`}
-          >
-            All Contacts
-          </h1>
-          <button
-            onClick={() => {
-              resetContactForm();
-              setIsContactModalOpen(true);
-            }}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              theme === "light"
-                ? "bg-blue-500 hover:bg-blue-600 text-white"
-                : "bg-cyan-600 hover:bg-cyan-500 text-white"
-            }`}
-          >
-            + New
-          </button>
-        </div>
+    <div className="min-h-screen">
+      <AppNavbar
+        theme={theme}
+        active="contacts"
+        isSearchOpen={isSearchOpen}
+        searchValue={searchValue}
+        setIsSearchOpen={setIsSearchOpen}
+        setSearchValue={setSearchValue}
+        onToggleTheme={toggleTheme}
+        session={session ?? null}
+      />
+
+      <div className="px-4 pt-10 pb-8 md:px-8">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h1
+              className={`text-xl font-semibold ${
+                theme === "light" ? "text-gray-900" : "text-gray-100"
+              }`}
+            >
+              All Contacts
+            </h1>
+            <button
+              onClick={() => {
+                resetContactForm();
+                setIsContactModalOpen(true);
+              }}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                theme === "light"
+                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                  : "bg-cyan-600 hover:bg-cyan-500 text-white"
+              }`}
+            >
+              + New
+            </button>
+          </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <div className="flex items-center gap-2">
@@ -754,6 +776,7 @@ export default function ContactsPage() {
             })}
           </div>
         </div>
+      </div>
       </div>
       {isContactModalOpen && (
         <div

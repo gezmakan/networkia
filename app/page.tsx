@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
 import {
   getDefaultCircleSettings,
   type CircleSetting,
 } from "@/lib/circle-settings";
 import { createContactSlug } from "@/lib/contact-slug";
+import { AppNavbar } from "@/app/components/AppNavbar";
 
 type Theme = "light" | "dark";
 
@@ -35,6 +36,12 @@ type StoredContact = Contact & {
     value: string;
     subValue?: string;
     type?: string;
+  }[];
+  interactionNotes?: {
+    id: string;
+    title: string;
+    body: string;
+    date: string;
   }[];
 };
 
@@ -110,7 +117,6 @@ export default function Dashboard() {
   const [draftCircleSettings, setDraftCircleSettings] = useState<CircleSetting[]>(
     circleSettings
   );
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { data: session } = useSession();
   const isDemoMode = fullContactsStorageKey.startsWith("demo_");
   const activeCircles = circleSettings
@@ -183,13 +189,6 @@ export default function Dashboard() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
-
-  useEffect(() => {
-    if (isSearchOpen) {
-      searchInputRef.current?.focus();
-    }
-  }, [isSearchOpen]);
-
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -679,7 +678,43 @@ export default function Dashboard() {
     }
     return `in ${Math.floor(diffDays / 30)}mo`;
   };
+  const formatPastFromDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "Unknown";
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    const diffDays = Math.round(
+      (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (diffDays <= 0) {
+      return "Today";
+    }
+    if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    }
+    if (diffDays < 30) {
+      return `${Math.floor(diffDays / 7)}w ago`;
+    }
+    if (diffDays < 365) {
+      return `${Math.floor(diffDays / 30)}mo ago`;
+    }
+    return `${Math.floor(diffDays / 365)}y ago`;
+  };
+  const searchTerm = searchValue.trim().toLowerCase();
   const filteredContacts = allContacts.filter((contact) => {
+    if (searchTerm) {
+      const tagsText = contact.tags.join(" ").toLowerCase();
+      const noteText = contact.notes ? contact.notes.toLowerCase() : "";
+      return (
+        contact.name.toLowerCase().includes(searchTerm) ||
+        contact.location.toLowerCase().includes(searchTerm) ||
+        tagsText.includes(searchTerm) ||
+        noteText.includes(searchTerm)
+      );
+    }
     if (activeFilter === "all") {
       return true;
     }
@@ -694,6 +729,9 @@ export default function Dashboard() {
     );
     return contact.tags.some((tag) => selectedSet.has(tag.toLowerCase()));
   });
+  useEffect(() => {
+    setContactsPage(1);
+  }, [searchTerm]);
   const totalContactPages = Math.max(
     1,
     Math.ceil(filteredContacts.length / contactsPerPage)
@@ -737,7 +775,28 @@ export default function Dashboard() {
         { text: "Updated Sarah Chen profile", time: "1d ago" },
         { text: "Coffee with Mike", time: "3d ago" },
       ]
-    : [];
+    : extraContacts
+        .flatMap((contact) => {
+          const notes = (contact.interactionNotes ?? []).map((note) => ({
+            text: `${note.title || "Interaction"} · ${contact.name}`,
+            time: formatPastFromDate(note.date),
+            timestamp: new Date(note.date).getTime(),
+          }));
+          const nextMeetEvents = contact.nextMeetDate
+            ? [
+                {
+                  text: `Next meet set · ${contact.name}`,
+                  time: formatUntil(contact.nextMeetDate),
+                  timestamp: new Date(contact.nextMeetDate).getTime(),
+                },
+              ]
+            : [];
+          return [...notes, ...nextMeetEvents];
+        })
+        .filter((activity) => !Number.isNaN(activity.timestamp))
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 4)
+        .map(({ text, time }) => ({ text, time }));
   const hasJustMet = allContacts.some((contact) =>
     contact.tags.some((tag) => tag.toLowerCase() === "just met")
   );
@@ -757,9 +816,9 @@ export default function Dashboard() {
         current.mode === "overdue" || current.mode === "circles"
           ? current.mode
           : "all";
-      const nextCircles = current.circles.filter((key) =>
-        allowedCircleFilters.has(key)
-      );
+      const nextCircles = current.circles
+        .filter((key) => allowedCircleFilters.has(key))
+        .slice(0, 1);
       const nextMode =
         mode === "circles" && nextCircles.length === 0 ? "all" : mode;
       if (
@@ -778,93 +837,21 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen transition-colors duration-300 flex flex-col">
       <div className="flex-1">
-        {/* Navbar */}
-        <nav
-          className={`sticky top-0 z-20 w-full border-b mb-10 ${
-            theme === "light"
-              ? "bg-white/90 border-gray-200 shadow-sm"
-              : "bg-gray-900/90 border-gray-800 shadow-lg"
-          }`}
-        >
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 py-3 pl-2 pr-4 md:pl-4 md:pr-6">
-            <div className="flex items-center gap-6">
-              <h1
-                className={`text-2xl font-bold tracking-tight ${
-                  theme === "light" ? "text-gray-900" : "text-gray-100"
-                }`}
-              >
-                Networkia
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              {isSearchOpen ? (
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search..."
-                  value={searchValue}
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  onBlur={() => {
-                    if (!searchValue) {
-                      setIsSearchOpen(false);
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      setIsSearchOpen(false);
-                      setSearchValue("");
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
-                    theme === "light"
-                      ? "border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500"
-                      : "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400 focus:border-cyan-500"
-                  } focus:outline-none`}
-                />
-              ) : (
-                <button
-                  onClick={() => setIsSearchOpen(true)}
-                  className={`px-3 py-2 rounded-lg transition-all duration-200 text-lg ${
-                    theme === "light"
-                      ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                      : "bg-gray-800 hover:bg-gray-700 text-gray-200"
-                  }`}
-                  aria-label="Open search"
-                >
-                  🔍
-                </button>
-              )}
-              <button
-                onClick={toggleTheme}
-                className={`px-4 py-2 rounded-lg transition-all duration-200 text-xl ${
-                  theme === "light"
-                    ? "bg-gray-100 hover:bg-gray-200 hover:scale-105"
-                    : "bg-gray-800 hover:bg-gray-700 hover:scale-105"
-                }`}
-                aria-label="Toggle theme"
-              >
-                {theme === "light" ? "🌙" : "☀️"}
-              </button>
-              {!session && (
-                <button
-                  onClick={() => signIn("google")}
-                  className={`hidden sm:inline-flex px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    theme === "light"
-                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      : "bg-gray-800 text-gray-200 hover:bg-gray-700"
-                  }`}
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
-          </div>
-        </nav>
+        <AppNavbar
+          theme={theme}
+          active="dashboard"
+          isSearchOpen={isSearchOpen}
+          searchValue={searchValue}
+          setIsSearchOpen={setIsSearchOpen}
+          setSearchValue={setSearchValue}
+          onToggleTheme={toggleTheme}
+          session={session ?? null}
+        />
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 pt-10 md:px-8">
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-6">
             {/* All Contacts */}
           <div
             className={`rounded-2xl p-6 border transition-all duration-300 h-full ${
@@ -872,7 +859,7 @@ export default function Dashboard() {
                 ? "bg-white border-gray-200 shadow-sm"
                 : "bg-gray-800 border-gray-700 shadow-xl"
             }`}
-            >
+          >
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -924,9 +911,7 @@ export default function Dashboard() {
                     setContactFilterState((current) => {
                       const key = filter.key.toLowerCase();
                       const isActive = current.circles.includes(key);
-                      const nextCircles = isActive
-                        ? current.circles.filter((item) => item !== key)
-                        : [...current.circles, key];
+                      const nextCircles = isActive ? [] : [key];
                       return {
                         mode: nextCircles.length === 0 ? "all" : "circles",
                         circles: nextCircles,
@@ -1288,21 +1273,29 @@ export default function Dashboard() {
           </div>
 
           {/* Recent Activity */}
-          {recentActivity.length > 0 && (
-            <div
-              className={`rounded-2xl p-5 border transition-all duration-300 h-full ${
-                theme === "light"
-                  ? "bg-white border-gray-200 shadow-sm"
-                  : "bg-gray-800 border-gray-700 shadow-xl"
+          <div
+            className={`rounded-2xl p-5 border transition-all duration-300 h-full ${
+              theme === "light"
+                ? "bg-white border-gray-200 shadow-sm"
+                : "bg-gray-800 border-gray-700 shadow-xl"
+            }`}
+          >
+            <h2
+              className={`text-xs font-bold uppercase tracking-wider mb-4 ${
+                theme === "light" ? "text-gray-500" : "text-gray-400"
               }`}
             >
-              <h2
-                className={`text-xs font-bold uppercase tracking-wider mb-4 ${
+              Recent Activity
+            </h2>
+            {recentActivity.length === 0 ? (
+              <div
+                className={`rounded-xl border border-dashed px-6 py-8 text-center text-sm ${
                   theme === "light" ? "text-gray-500" : "text-gray-400"
                 }`}
               >
-                Recent Activity
-              </h2>
+                Activity will show up here once you start logging notes.
+              </div>
+            ) : (
               <div className="space-y-3">
                 {recentActivity.map((activity, idx) => (
                   <div
@@ -1322,8 +1315,8 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
           </div>
         </div>
       </div>
