@@ -37,6 +37,71 @@ const profileFieldTemplates: ProfileField[] = [
   { id: "interests", label: "Interests", value: "", type: "multi-line" },
 ];
 
+const demoProfileDefaults = {
+  name: "Edward Norton",
+  title: "Film Director & Producer",
+  location: "Los Angeles, CA",
+  tags: ["Friend"],
+  lastContactDaysAgo: 3,
+  nextMeetDate: "2026-01-24",
+  fields: [
+    { id: "email", label: "Email", value: "ed.norton@gmail.com", type: "text" },
+    { id: "phone", label: "Phone", value: "+1 (310) 555-8834", type: "text" },
+    {
+      id: "work",
+      label: "Work",
+      value: "Class 5 Films",
+      subValue: "Co-founder & Director",
+      type: "text",
+    },
+    { id: "website", label: "Website", value: "edwardnorton.com", type: "text" },
+    { id: "status", label: "Status", value: "Married", type: "text" },
+    {
+      id: "spouse",
+      label: "Spouse",
+      value: "Shauna Robertson",
+      subValue: "Producer",
+      type: "text",
+    },
+    { id: "kids", label: "Kids", value: "Atlas, 11", type: "text" },
+    { id: "nationality", label: "Nationality", value: "American", type: "text" },
+    {
+      id: "education",
+      label: "Education",
+      value: "Yale University",
+      subValue: "History major, Japanese studies",
+      type: "text",
+    },
+    {
+      id: "birthday",
+      label: "Birthday",
+      value: "August 18",
+      subValue: "Age 54",
+      type: "text",
+    },
+    {
+      id: "circle",
+      label: "Their circle",
+      value: "Wes Anderson\nBrad Pitt\nAaron Sorkin",
+      type: "multi-line",
+    },
+    {
+      id: "howWeMet",
+      label: "How We Met",
+      value:
+        "Met through mutual friend at Sundance 2019, bonded over documentary filmmaking",
+      type: "text",
+    },
+    {
+      id: "interests",
+      label: "Interests",
+      value:
+        "Environmental conservation\nJapanese culture & language\nMeditation & mindfulness\nArchitecture",
+      type: "multi-line",
+    },
+  ] as ProfileField[],
+};
+
 const ensureProfileFields = (current: ProfileField[]) => {
   const byId = new Map(current.map((field) => [field.id, field]));
   const merged = profileFieldTemplates.map((template) => {
@@ -90,33 +155,23 @@ export default function CharacterDemo2({
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [showNextMeetPopup, setShowNextMeetPopup] = useState(false);
-  const [nextMeetDate, setNextMeetDate] = useState<string | null>("2026-01-24");
+  const [nextMeetDate, setNextMeetDate] = useState<string | null>(null);
+  const [lastContactDaysAgo, setLastContactDaysAgo] = useState<number | null>(null);
+  const [isDemoProfile, setIsDemoProfile] = useState(false);
   const [contactId, setContactId] = useState<string | null>(null);
   const [isNewContact, setIsNewContact] = useState(false);
   const [isThoughtsExpanded, setIsThoughtsExpanded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Profile header info
-  const [profileName, setProfileName] = useState("Edward Norton");
-  const [profileTitle, setProfileTitle] = useState("Film Director & Producer");
-  const [profileLocation, setProfileLocation] = useState("Los Angeles, CA");
-  const [profileTags, setProfileTags] = useState(["Friend"]);
+  const [profileName, setProfileName] = useState("");
+  const [profileTitle, setProfileTitle] = useState("");
+  const [profileLocation, setProfileLocation] = useState("");
+  const [profileTags, setProfileTags] = useState<string[]>([]);
 
-  const [profileFields, setProfileFields] = useState<ProfileField[]>([
-    { id: "email", label: "Email", value: "ed.norton@gmail.com", type: "text" },
-    { id: "phone", label: "Phone", value: "+1 (310) 555-8834", type: "text" },
-    { id: "work", label: "Work", value: "Class 5 Films", subValue: "Co-founder & Director", type: "text" },
-    { id: "website", label: "Website", value: "edwardnorton.com", type: "text" },
-    { id: "status", label: "Status", value: "Married", type: "text" },
-    { id: "spouse", label: "Spouse", value: "Shauna Robertson", subValue: "Producer", type: "text" },
-    { id: "kids", label: "Kids", value: "Atlas, 11", type: "text" },
-    { id: "nationality", label: "Nationality", value: "American", type: "text" },
-    { id: "education", label: "Education", value: "Yale University", subValue: "History major, Japanese studies", type: "text" },
-    { id: "birthday", label: "Birthday", value: "August 18", subValue: "Age 54", type: "text" },
-    { id: "circle", label: "Their circle", value: "Wes Anderson\nBrad Pitt\nAaron Sorkin", type: "multi-line" },
-    { id: "howWeMet", label: "How We Met", value: "Met through mutual friend at Sundance 2019, bonded over documentary filmmaking", type: "text" },
-    { id: "interests", label: "Interests", value: "Environmental conservation\nJapanese culture & language\nMeditation & mindfulness\nArchitecture", type: "multi-line" },
-  ]);
+  const [profileFields, setProfileFields] = useState<ProfileField[]>(
+    ensureProfileFields([])
+  );
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -396,6 +451,7 @@ export default function CharacterDemo2({
 
   useEffect(() => {
     if (isNewParam) {
+      setIsDemoProfile(false);
       const newSnapshot = `new:${newContactName}|${newContactLocation}|${newContactNotes}`;
       if (initSnapshotRef.current === newSnapshot) {
         return;
@@ -422,6 +478,7 @@ export default function CharacterDemo2({
         )
       );
       setNextMeetDate(null);
+      setLastContactDaysAgo(null);
       setIsEditingProfile(true);
       return;
     }
@@ -438,6 +495,7 @@ export default function CharacterDemo2({
       ? storedContacts.find((contact) => contact.id === contactIdParam)
       : undefined;
     if (storedContact) {
+      setIsDemoProfile(false);
       const contactSnapshot = `id:${storedContact.id}|${activeCirclesKey}|${JSON.stringify(
         storedContact
       )}`;
@@ -457,11 +515,28 @@ export default function CharacterDemo2({
       );
       setProfileFields(ensureProfileFields(storedContact.profileFields || []));
       setNextMeetDate(storedContact.nextMeetDate ?? null);
+      setLastContactDaysAgo(
+        typeof storedContact.daysAgo === "number" ? storedContact.daysAgo : null
+      );
       return;
     }
 
     if (initSnapshotRef.current) {
       initSnapshotRef.current = "";
+    }
+    if (!contactIdParam && !slugValue && !isNewParam) {
+      const demoSnapshot = `demo:${demoProfileDefaults.name}`;
+      if (initSnapshotRef.current !== demoSnapshot) {
+        initSnapshotRef.current = demoSnapshot;
+        setIsDemoProfile(true);
+        setProfileName(demoProfileDefaults.name);
+        setProfileTitle(demoProfileDefaults.title);
+        setProfileLocation(demoProfileDefaults.location);
+        setProfileTags(demoProfileDefaults.tags);
+        setProfileFields(ensureProfileFields(demoProfileDefaults.fields));
+        setLastContactDaysAgo(demoProfileDefaults.lastContactDaysAgo);
+        setNextMeetDate(demoProfileDefaults.nextMeetDate);
+      }
     }
     setIsNewContact(false);
   }, [
@@ -481,6 +556,14 @@ export default function CharacterDemo2({
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
   };
+
+  if (!areContactsLoaded && (slugValue || contactIdParam) && !isNewParam) {
+    return (
+      <div className="min-h-screen p-8 text-sm text-gray-500">
+        Loading contact...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8 transition-colors duration-300">
@@ -999,7 +1082,7 @@ export default function CharacterDemo2({
                   theme === "light" ? "text-gray-700" : "text-gray-300"
                 } ${isThoughtsExpanded ? "" : "line-clamp-4"}`}
               >
-                {isNewContact ? (
+                {!isDemoProfile ? (
                   <p className="text-sm italic text-gray-500">
                     No impressions yet.
                   </p>
@@ -1017,7 +1100,7 @@ export default function CharacterDemo2({
                   </>
                 )}
               </div>
-              {!isNewContact && (
+              {isDemoProfile && (
                 <button
                   onClick={() => setIsThoughtsExpanded((open) => !open)}
                   className={`mt-3 text-xs font-semibold ${
@@ -1056,7 +1139,9 @@ export default function CharacterDemo2({
                           : "border-gray-700 hover:border-cyan-500 hover:bg-gray-800 text-gray-100"
                       }`}
                     >
-                      {formatRelative(3)}
+                      {lastContactDaysAgo === null
+                        ? "Not yet"
+                        : formatRelative(lastContactDaysAgo)}
                     </button>
                     <button
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
@@ -1253,7 +1338,7 @@ export default function CharacterDemo2({
               </div>
 
               <div className="space-y-4">
-                {isNewContact ? (
+                {!isDemoProfile ? (
                   <div className="rounded-xl border border-dashed px-6 py-8 text-center text-sm text-gray-500">
                     No interactions yet.
                   </div>
