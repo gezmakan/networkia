@@ -767,6 +767,13 @@ export default function Dashboard() {
     (contactsPage - 1) * contactsPerPage,
     contactsPage * contactsPerPage
   );
+  const checkInContacts = [...allContacts]
+    .filter((contact) => contact.nextMeetDate)
+    .sort((a, b) => {
+      const aDate = a.nextMeetDate ? new Date(a.nextMeetDate).getTime() : 0;
+      const bDate = b.nextMeetDate ? new Date(b.nextMeetDate).getTime() : 0;
+      return aDate - bDate;
+    });
 
   const recentActivity = isDemoMode
     ? [
@@ -835,31 +842,120 @@ export default function Dashboard() {
   }, [setContactFilterState, tagFilters]);
 
   return (
-    <div className="min-h-screen transition-colors duration-300 flex flex-col">
-      <div className="flex-1">
-        <AppNavbar
-          theme={theme}
-          active="dashboard"
-          isSearchOpen={isSearchOpen}
-          searchValue={searchValue}
-          setIsSearchOpen={setIsSearchOpen}
-          setSearchValue={setSearchValue}
-          onToggleTheme={toggleTheme}
-          session={session ?? null}
-        />
+    <div className="h-screen transition-colors duration-300 flex flex-col overflow-hidden">
+      <AppNavbar
+        theme={theme}
+        active="dashboard"
+        isSearchOpen={isSearchOpen}
+        searchValue={searchValue}
+        setIsSearchOpen={setIsSearchOpen}
+        setSearchValue={setSearchValue}
+        onToggleTheme={toggleTheme}
+        session={session ?? null}
+      />
 
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 pt-10 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 pt-10 pb-24 md:px-8">
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-6">
-            {/* All Contacts */}
-          <div
-            className={`rounded-2xl p-6 border transition-all duration-300 h-full ${
-              theme === "light"
-                ? "bg-white border-gray-200 shadow-sm"
-                : "bg-gray-800 border-gray-700 shadow-xl"
-            }`}
-          >
+            <div className="space-y-6">
+              {/* Check-ins */}
+              <div
+                className={`rounded-2xl p-6 border transition-all duration-300 ${
+                  theme === "light"
+                    ? "bg-white border-gray-200 shadow-sm"
+                    : "bg-gray-800 border-gray-700 shadow-xl"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h2
+                    className={`text-xs font-bold uppercase tracking-wider ${
+                      theme === "light" ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  >
+                    Check-ins
+                  </h2>
+                  <Link
+                    href="/contacts"
+                    className={`text-xs font-semibold transition-colors ${
+                      theme === "light"
+                        ? "text-blue-600 hover:text-blue-700"
+                        : "text-cyan-400 hover:text-cyan-300"
+                    }`}
+                  >
+                    View all
+                  </Link>
+                </div>
+                {checkInContacts.length === 0 ? (
+                  <div
+                    className={`rounded-xl border border-dashed px-6 py-6 text-center text-sm ${
+                      theme === "light"
+                        ? "text-gray-500"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    No check-ins yet. Add a next meet date to get started.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {checkInContacts.slice(0, 4).map((contact) => {
+                      const lastContactLabel =
+                        typeof contact.daysAgo === "number"
+                          ? formatRelative(contact.daysAgo)
+                          : contact.lastContact;
+                      return (
+                        <div
+                          key={contact.id}
+                          className="flex items-center justify-between gap-4 rounded-xl px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <div
+                              className={`text-sm font-semibold ${
+                                theme === "light"
+                                  ? "text-gray-900"
+                                  : "text-gray-100"
+                              }`}
+                            >
+                              {contact.name}
+                            </div>
+                            <div
+                              className={`text-sm ${
+                                theme === "light"
+                                  ? "text-gray-500"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              {contact.location} · Last contacted{" "}
+                              {lastContactLabel}
+                            </div>
+                          </div>
+                          <div
+                            className={`text-sm whitespace-nowrap ${
+                              theme === "light"
+                                ? "text-gray-600"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            {contact.nextMeetDate
+                              ? formatUntil(contact.nextMeetDate)
+                              : "—"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* All Contacts */}
+              <div
+                className={`rounded-2xl p-6 border transition-all duration-300 ${
+                  theme === "light"
+                    ? "bg-white border-gray-200 shadow-sm"
+                    : "bg-gray-800 border-gray-700 shadow-xl"
+                }`}
+              >
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -877,26 +973,6 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => {
-                  setContactFilterState((current) => ({
-                    mode: "overdue",
-                    circles: [],
-                  }));
-                  setContactsPage(1);
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
-                  activeFilter === "overdue"
-                    ? theme === "light"
-                      ? "bg-blue-500 text-white"
-                      : "bg-cyan-600 text-white"
-                    : theme === "light"
-                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                Check-in
-              </button>
               {tagFilters.length > 0 && (
                 <div
                   className={`h-3 w-px ${
@@ -1271,59 +1347,59 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Recent Activity */}
-          <div
-            className={`rounded-2xl p-5 border transition-all duration-300 h-full ${
-              theme === "light"
-                ? "bg-white border-gray-200 shadow-sm"
-                : "bg-gray-800 border-gray-700 shadow-xl"
+        {/* Recent Activity */}
+        <div
+          className={`rounded-2xl p-5 border transition-all duration-300 h-full ${
+            theme === "light"
+              ? "bg-white border-gray-200 shadow-sm"
+              : "bg-gray-800 border-gray-700 shadow-xl"
+          }`}
+        >
+          <h2
+            className={`text-xs font-bold uppercase tracking-wider mb-4 ${
+              theme === "light" ? "text-gray-500" : "text-gray-400"
             }`}
           >
-            <h2
-              className={`text-xs font-bold uppercase tracking-wider mb-4 ${
+            Recent Activity
+          </h2>
+          {recentActivity.length === 0 ? (
+            <div
+              className={`rounded-xl border border-dashed px-6 py-8 text-center text-sm ${
                 theme === "light" ? "text-gray-500" : "text-gray-400"
               }`}
             >
-              Recent Activity
-            </h2>
-            {recentActivity.length === 0 ? (
-              <div
-                className={`rounded-xl border border-dashed px-6 py-8 text-center text-sm ${
-                  theme === "light" ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Activity will show up here once you start logging notes.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentActivity.map((activity, idx) => (
-                  <div
-                    key={idx}
-                    className={`text-sm ${
-                      theme === "light" ? "text-gray-700" : "text-gray-300"
+              Activity will show up here once you start logging notes.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentActivity.map((activity, idx) => (
+                <div
+                  key={idx}
+                  className={`text-sm ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
+                  {activity.text}{" "}
+                  <span
+                    className={`${
+                      theme === "light" ? "text-gray-500" : "text-gray-400"
                     }`}
                   >
-                    {activity.text}{" "}
-                    <span
-                      className={`${
-                        theme === "light" ? "text-gray-500" : "text-gray-400"
-                      }`}
-                    >
-                      - {activity.time}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          </div>
+                    - {activity.time}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+    </div>
 
-      {/* Footer */}
+        {/* Footer */}
       <footer
-        className={`mt-16 border-t ${
+        className={`relative z-10 mt-32 border-t ${
           theme === "light"
             ? "bg-gray-50 border-gray-200"
             : "bg-gray-900 border-gray-800"
@@ -1400,6 +1476,7 @@ export default function Dashboard() {
           </div>
         </div>
       </footer>
+      </div>
       {session && isSettingsOpen && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-4"

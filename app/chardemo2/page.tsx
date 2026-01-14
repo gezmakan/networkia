@@ -38,6 +38,9 @@ const profileFieldTemplates: ProfileField[] = [
   { id: "twitter", label: "Twitter", value: "", type: "text" },
   { id: "instagram", label: "Instagram", value: "", type: "text" },
   { id: "github", label: "GitHub", value: "", type: "text" },
+  { id: "address", label: "Full Address", value: "", type: "multi-line" },
+  { id: "gender", label: "Gender", value: "", type: "text" },
+  { id: "religion", label: "Religion", value: "", type: "text" },
   { id: "status", label: "Status", value: "", type: "text" },
   { id: "spouse", label: "Spouse", value: "", subValue: "", type: "text" },
   { id: "kids", label: "Kids", value: "", type: "text" },
@@ -79,6 +82,9 @@ const demoProfileDefaults = {
     { id: "twitter", label: "Twitter", value: "@ednorton", type: "text" },
     { id: "instagram", label: "Instagram", value: "@edwardnorton", type: "text" },
     { id: "github", label: "GitHub", value: "", type: "text" },
+    { id: "address", label: "Full Address", value: "", type: "multi-line" },
+    { id: "gender", label: "Gender", value: "", type: "text" },
+    { id: "religion", label: "Religion", value: "", type: "text" },
     { id: "status", label: "Status", value: "Married", type: "text" },
     {
       id: "spouse",
@@ -760,7 +766,7 @@ export default function CharacterDemo2({
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-300">
+    <div className="h-screen transition-colors duration-300 flex flex-col overflow-hidden">
       <AppNavbar
         theme={theme}
         active="contacts"
@@ -772,8 +778,9 @@ export default function CharacterDemo2({
         session={session ?? null}
       />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 pb-8 pt-10 md:px-8">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 pb-8 pt-10 md:px-8">
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8">
           {/* Left Sidebar - Profile & Contact */}
@@ -2121,6 +2128,7 @@ export default function CharacterDemo2({
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

@@ -625,7 +625,7 @@ export default function ContactsPage() {
   }, [filteredContacts, sortDirection, sortKey]);
 
   return (
-    <div className="min-h-screen">
+    <div className="h-screen flex flex-col overflow-hidden">
       <AppNavbar
         theme={theme}
         active="contacts"
@@ -637,8 +637,9 @@ export default function ContactsPage() {
         session={session ?? null}
       />
 
-      <div className="px-4 pt-10 pb-8 md:px-8">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="px-4 pt-10 pb-8 md:px-8">
+          <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1
               className={`text-xl font-semibold ${
@@ -658,7 +659,7 @@ export default function ContactsPage() {
                   : "bg-cyan-600 hover:bg-cyan-500 text-white"
               }`}
             >
-              + New
+              Add contact
             </button>
           </div>
 
@@ -963,87 +964,89 @@ export default function ContactsPage() {
               );
             })}
           </div>
-        </div>
-      </div>
-      </div>
-      <footer
-        className={`mt-16 border-t ${
-          theme === "light"
-            ? "bg-gray-50 border-gray-200"
-            : "bg-gray-900 border-gray-800"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col items-center gap-4">
-            {session && (
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  className={`rounded-md px-2 py-1 transition-colors ${
-                    theme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
-                  aria-label="Share"
-                >
-                  🔗
-                </button>
-                <button
-                  onClick={handleExportCalendar}
-                  className={`rounded-md px-2 py-1 transition-colors ${
-                    theme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
-                  aria-label="Export calendar"
-                >
-                  📅
-                </button>
-                <span aria-hidden="true">🖨️</span>
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className={`rounded-md px-2 py-1 transition-colors ${
-                    theme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
-                  aria-label="Open settings"
-                >
-                  ⚙️
-                </button>
-              </div>
-            )}
-            <div className="flex items-center gap-6">
-              <a
-                href="#"
-                className={`text-sm transition-colors ${
-                  theme === "light"
-                    ? "text-gray-600 hover:text-blue-600"
-                    : "text-gray-400 hover:text-cyan-400"
-                }`}
-              >
-                Privacy Policy
-              </a>
-              <a
-                href="#"
-                className={`text-sm transition-colors ${
-                  theme === "light"
-                    ? "text-gray-600 hover:text-blue-600"
-                    : "text-gray-400 hover:text-cyan-400"
-                }`}
-              >
-                Terms of Service
-              </a>
-            </div>
-            <p
-              className={`text-xs ${
-                theme === "light" ? "text-gray-500" : "text-gray-500"
-              }`}
-            >
-              © 2026 Networkia
-            </p>
           </div>
         </div>
-      </footer>
+        </div>
+
+        <footer
+          className={`mt-16 border-t ${
+            theme === "light"
+              ? "bg-gray-50 border-gray-200"
+              : "bg-gray-900 border-gray-800"
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="flex flex-col items-center gap-4">
+              {session && (
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    className={`rounded-md px-2 py-1 transition-colors ${
+                      theme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                    aria-label="Share"
+                  >
+                    🔗
+                  </button>
+                  <button
+                    onClick={handleExportCalendar}
+                    className={`rounded-md px-2 py-1 transition-colors ${
+                      theme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                    aria-label="Export calendar"
+                  >
+                    📅
+                  </button>
+                  <span aria-hidden="true">🖨️</span>
+                  <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    className={`rounded-md px-2 py-1 transition-colors ${
+                      theme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                    aria-label="Open settings"
+                  >
+                    ⚙️
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-6">
+                <a
+                  href="#"
+                  className={`text-sm transition-colors ${
+                    theme === "light"
+                      ? "text-gray-600 hover:text-blue-600"
+                      : "text-gray-400 hover:text-cyan-400"
+                  }`}
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="#"
+                  className={`text-sm transition-colors ${
+                    theme === "light"
+                      ? "text-gray-600 hover:text-blue-600"
+                      : "text-gray-400 hover:text-cyan-400"
+                  }`}
+                >
+                  Terms of Service
+                </a>
+              </div>
+              <p
+                className={`text-xs ${
+                  theme === "light" ? "text-gray-500" : "text-gray-500"
+                }`}
+              >
+                © 2026 Networkia
+              </p>
+            </div>
+          </div>
+        </footer>
+      </div>
       {session && isSettingsOpen && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-4"
