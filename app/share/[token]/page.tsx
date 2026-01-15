@@ -139,7 +139,8 @@ export default function SharedProfilePage() {
           </div>
         )}
 
-        {sharedContact.interactionNotes?.length > 0 && (
+        {sharedContact.interactionNotes &&
+          sharedContact.interactionNotes.length > 0 && (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
               Notes on interactions
