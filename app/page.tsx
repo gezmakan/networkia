@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
+import { useContacts } from "@/hooks/use-contacts";
 import {
   getDefaultCircleSettings,
   type CircleSetting,
@@ -131,6 +132,7 @@ export default function Dashboard() {
     circleSettings
   );
   const { data: session } = useSession();
+  const { contacts: dbContacts, isLoading: isLoadingDbContacts } = useContacts();
   const isDemoMode = (fullContactsStorageKey ?? "").startsWith("demo_");
   const activeCircles = circleSettings
     .filter((circle) => circle.isActive && circle.name.trim())
@@ -657,12 +659,29 @@ export default function Dashboard() {
     isQuick: true,
     notes: contact.notes,
   }));
-  const allContacts = [
-    ...(isDemoMode ? baseContacts : []),
-    ...extraContacts,
-    ...quickContactsAsContacts,
-  ];
-  const contactsReady = areExtraContactsLoaded && areQuickContactsLoaded;
+  // Use database contacts if authenticated, otherwise use localStorage
+  const allContacts: Contact[] = session?.user?.email && !isDemoMode
+    ? dbContacts.map((contact: any): Contact => ({
+        id: contact.id,
+        initials: contact.initials || "",
+        name: contact.name,
+        title: contact.title,
+        tags: contact.tags || [],
+        location: contact.location || "",
+        lastContact: contact.lastContact || "",
+        daysAgo: contact.daysAgo || 0,
+        nextMeetDate: contact.nextMeetDate,
+        isQuick: contact.isQuickContact,
+        notes: contact.personalNotes,
+      }))
+    : [
+        ...(isDemoMode ? baseContacts : []),
+        ...extraContacts,
+        ...quickContactsAsContacts,
+      ];
+  const contactsReady = session?.user?.email && !isDemoMode
+    ? !isLoadingDbContacts
+    : areExtraContactsLoaded && areQuickContactsLoaded;
   const allowedTagSet = new Set(
     ["Just Met", ...activeCircles].map((tag) => tag.toLowerCase())
   );
