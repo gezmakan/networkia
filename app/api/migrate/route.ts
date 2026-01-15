@@ -41,7 +41,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const results = {
+    const results: {
+      total: number;
+      created: number;
+      skipped: number;
+      errors: Array<{ contact: string; error: string }>;
+    } = {
       total: contacts.length,
       created: 0,
       skipped: 0,
