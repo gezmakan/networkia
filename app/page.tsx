@@ -662,12 +662,34 @@ export default function Dashboard() {
     };
   };
   const contactsPerPage = 10;
-  const getContactDaysAgo = (contact: Contact) =>
-    typeof contact.daysAgo === "number" && !Number.isNaN(contact.daysAgo)
-      ? contact.daysAgo
-      : !contact.lastContact?.trim()
-      ? Number.POSITIVE_INFINITY
-      : getDaysAgoFromMonthDay(contact.lastContact);
+  const getDaysAgoFromDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return Number.NaN;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return Math.round(
+      (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+    );
+  };
+  const getContactDaysAgo = (contact: Contact) => {
+    const lastContact = contact.lastContact?.trim();
+    if (!lastContact) {
+      return Number.POSITIVE_INFINITY;
+    }
+    if (lastContact.includes("-")) {
+      const isoDays = getDaysAgoFromDate(lastContact);
+      if (!Number.isNaN(isoDays)) {
+        return Math.max(isoDays, 0);
+      }
+    }
+    if (typeof contact.daysAgo === "number" && !Number.isNaN(contact.daysAgo)) {
+      return contact.daysAgo;
+    }
+    return getDaysAgoFromMonthDay(lastContact);
+  };
   const formatRelative = (days: number) => {
     if (days <= 0) {
       return "Today";
@@ -679,6 +701,16 @@ export default function Dashboard() {
       return `${Math.floor(days / 7)}w ago`;
     }
     return `${Math.floor(days / 30)}mo ago`;
+  };
+  const getContactRelative = (contact: Contact) => {
+    const days = getContactDaysAgo(contact);
+    if (days === Number.POSITIVE_INFINITY) {
+      return "Not yet";
+    }
+    if (!Number.isFinite(days)) {
+      return contact.lastContact;
+    }
+    return formatRelative(days);
   };
   const formatUntil = (dateValue: string) => {
     const target = new Date(dateValue);
@@ -1017,9 +1049,7 @@ export default function Dashboard() {
                                 : "text-gray-500"
                             }`}
                           >
-                            · Last met {typeof contact.daysAgo === "number"
-                              ? formatRelative(contact.daysAgo)
-                              : contact.lastContact}
+                            · Last met {getContactRelative(contact)}
                           </div>
                         </div>
                         <div
@@ -1239,9 +1269,7 @@ export default function Dashboard() {
                             : "text-gray-400"
                         }`}
                       >
-                        {typeof contact.daysAgo === "number"
-                          ? formatRelative(contact.daysAgo)
-                          : contact.lastContact}
+                        {getContactRelative(contact)}
                       </div>
                       {activeFilter === "overdue" && (
                         <div
