@@ -270,6 +270,7 @@ export default function CharacterDemo2({
     ensureProfileFields([])
   );
   const { data: session } = useSession();
+  const isLiveMode = Boolean(session?.user?.email);
   const {
     contacts: liveContacts,
     isLoading: isLoadingLiveContacts,
@@ -632,7 +633,6 @@ export default function CharacterDemo2({
   const [draftCircleSettings, setDraftCircleSettings] = useState<CircleSetting[]>(
     circleSettings
   );
-  const isLiveMode = Boolean(session?.user?.email);
   const isContactsLoaded = isLiveMode ? !isLoadingLiveContacts : areContactsLoaded;
   const activeCircles = circleSettings
     .filter((circle) => circle.isActive && circle.name.trim())
