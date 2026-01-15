@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
+import { useContacts } from "@/hooks/use-contacts";
 import {
   getDefaultCircleSettings,
   type CircleSetting,

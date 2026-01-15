@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
+import { useContacts } from "@/hooks/use-contacts";
 import {
   getDefaultCircleSettings,
   type CircleSetting,
@@ -96,6 +97,7 @@ export default function ContactsPage() {
     (circle) => circle.isActive && !circle.name.trim()
   );
   const { data: session } = useSession();
+  const { contacts: dbContacts, isLoading: isLoadingDbContacts } = useContacts();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
@@ -526,11 +528,27 @@ export default function ContactsPage() {
     isQuick: true,
     notes: contact.notes,
   }));
-  const allContacts = [
-    ...(isDemoMode ? baseContacts : []),
-    ...extraContacts,
-    ...quickContactsAsContacts,
-  ];
+
+  // Use database contacts if authenticated and not in demo mode, otherwise use localStorage
+  const allContacts: Contact[] = session?.user?.email && !isDemoMode
+    ? dbContacts.map((contact: any): Contact => ({
+        id: contact.id,
+        initials: contact.initials || "",
+        name: contact.name,
+        tags: contact.tags || [],
+        location: contact.location || "",
+        lastContact: contact.lastContact || "",
+        daysAgo: contact.daysAgo || 0,
+        status: contact.daysAgo > 30 ? "overdue" : undefined,
+        isQuick: contact.isQuickContact,
+        notes: contact.personalNotes,
+        nextMeetDate: contact.nextMeetDate,
+      }))
+    : [
+        ...(isDemoMode ? baseContacts : []),
+        ...extraContacts,
+        ...quickContactsAsContacts,
+      ];
   const allowedTagSet = new Set(
     ["Just Met", ...activeCircles].map((tag) => tag.toLowerCase())
   );
