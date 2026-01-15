@@ -44,12 +44,21 @@ export async function GET(request: NextRequest) {
     orderBy: {
       createdAt: "desc",
     },
+    include: {
+      interactions: true,
+    },
   });
 
   // Add computed daysAgo field
   const contactsWithDaysAgo = contacts.map((contact) => ({
     ...contact,
     daysAgo: computeDaysAgo(contact.lastContact),
+    interactionNotes: contact.interactions.map((interaction) => ({
+      id: interaction.id,
+      title: interaction.title,
+      body: interaction.body,
+      date: interaction.date.toISOString(),
+    })),
   }));
 
   return Response.json(contactsWithDaysAgo);

@@ -26,6 +26,9 @@ export async function GET(
     where: {
       id,
     },
+    include: {
+      interactions: true,
+    },
   });
 
   if (!contact) {
@@ -39,6 +42,12 @@ export async function GET(
   const contactWithDaysAgo = {
     ...contact,
     daysAgo: computeDaysAgo(contact.lastContact),
+    interactionNotes: contact.interactions.map((interaction) => ({
+      id: interaction.id,
+      title: interaction.title,
+      body: interaction.body,
+      date: interaction.date.toISOString(),
+    })),
   };
 
   return Response.json(contactWithDaysAgo);
