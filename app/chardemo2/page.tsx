@@ -2130,7 +2130,6 @@ export default function CharacterDemo2({
           </div>
         </div>
         </div>
-      </div>
 
       {/* Footer */}
       <footer
@@ -2211,6 +2210,7 @@ export default function CharacterDemo2({
           </div>
         </div>
       </footer>
+      </div>
       {session && isSettingsOpen && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-4"
