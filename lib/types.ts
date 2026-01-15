@@ -5,7 +5,19 @@ export interface Contact {
   email?: string;
   phone?: string;
   company?: string;
-  notes?: string;
+  location?: string;
+  title?: string;
+  slug?: string;
+  initials?: string;
+  tags?: string[];
+  isQuickContact?: boolean;
+  lastContact?: string;
+  nextMeetDate?: string | null;
+  profileFields?: any;
+  personalNotes?: string;
+  shareToken?: string | null;
+  isShared?: boolean;
+  daysAgo?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,7 +27,14 @@ export interface CreateContactInput {
   email?: string;
   phone?: string;
   company?: string;
-  notes?: string;
+  location?: string;
+  title?: string;
+  tags?: string[];
+  isQuickContact?: boolean;
+  profileFields?: any;
+  personalNotes?: string;
+  lastContact?: string;
+  nextMeetDate?: string | null;
 }
 
 export interface UpdateContactInput extends Partial<CreateContactInput> {
