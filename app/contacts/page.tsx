@@ -317,7 +317,9 @@ export default function ContactsPage() {
     setContactName(quickContact.name);
     setContactLocation(quickContact.location ?? "");
     setContactNotes(
-      isLiveMode ? quickContact.personalNotes ?? "" : quickContact.notes ?? ""
+      isLiveMode
+        ? ((quickContact as { personalNotes?: string }).personalNotes ?? "")
+        : quickContact.notes ?? ""
     );
     setIsContactModalOpen(true);
   };
