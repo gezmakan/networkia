@@ -77,7 +77,7 @@ model Contact {
   isQuickContact Boolean   @default(false)
 
   // Dates
-  lastContact    DateTime  @default(now())
+  lastContact    DateTime?
   nextMeetDate   DateTime?
 
   // JSON fields

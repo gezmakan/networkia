@@ -23,7 +23,10 @@ function generateInitials(name: string): string {
 }
 
 // Helper to compute daysAgo
-function computeDaysAgo(lastContact: Date): number {
+function computeDaysAgo(lastContact: Date | null): number | null {
+  if (!lastContact) {
+    return null;
+  }
   const now = new Date();
   const diff = now.getTime() - lastContact.getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -111,7 +114,7 @@ export async function POST(request: NextRequest) {
         isQuickContact,
         profileFields: profileFields || undefined,
         personalNotes,
-        lastContact: lastContact ? new Date(lastContact) : new Date(),
+        lastContact: lastContact ? new Date(lastContact) : null,
         nextMeetDate: nextMeetDate ? new Date(nextMeetDate) : null,
       },
     });

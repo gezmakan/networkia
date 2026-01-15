@@ -728,7 +728,7 @@ export default function CharacterDemo2({
       location: contact.location || "",
       tags: contact.tags || [],
       lastContact: contact.lastContact || "",
-      daysAgo: contact.daysAgo ?? 0,
+      daysAgo: contact.daysAgo !== null ? contact.daysAgo : null,
       profileFields: contact.profileFields || [],
       nextMeetDate: contact.nextMeetDate ?? null,
       personalNotes: contact.personalNotes ?? "",
@@ -768,7 +768,7 @@ export default function CharacterDemo2({
         isQuickContact: next.isQuickContact,
         profileFields: next.profileFields,
         personalNotes: next.personalNotes,
-        lastContact: next.lastContact || undefined,
+        lastContact: next.lastContact ?? null,
         nextMeetDate: next.nextMeetDate,
         shareToken: next.shareToken ?? undefined,
         isShared: next.isShared ?? undefined,
@@ -865,7 +865,7 @@ export default function CharacterDemo2({
     updateStoredContact(contactId, (contact) => ({
       ...contact,
       lastContact: value ? value.toISOString() : "",
-      daysAgo: typeof daysAgo === "number" ? daysAgo : 0,
+      daysAgo: daysAgo !== null ? daysAgo : null,
     }));
   };
   const shareProfile = () => {
@@ -1394,7 +1394,7 @@ export default function CharacterDemo2({
                               personalNotes,
                               lastContact: lastContactDate
                                 ? lastContactDate.toISOString()
-                                : undefined,
+                                : null,
                               nextMeetDate,
                               isQuickContact: false,
                             };
@@ -1872,6 +1872,28 @@ export default function CharacterDemo2({
                             lastContactInputRef.current.showPicker();
                           }
                         }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLInputElement;
+                          const nextDate = target.value
+                            ? new Date(target.value)
+                            : null;
+                          if (!nextDate) {
+                            applyLastContact(null, null);
+                            return;
+                          }
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const targetDate = new Date(nextDate);
+                          targetDate.setHours(0, 0, 0, 0);
+                          const diffDays = Math.round(
+                            (today.getTime() - targetDate.getTime()) /
+                              (1000 * 60 * 60 * 24)
+                          );
+                          applyLastContact(
+                            nextDate,
+                            Math.max(diffDays, 0)
+                          );
+                        }}
                         onChange={(e) => {
                           const nextDate = e.target.value
                             ? new Date(e.target.value)
@@ -1917,9 +1939,13 @@ export default function CharacterDemo2({
                     </label>
                     <button
                       onClick={() => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        applyLastContact(today, 0);
+                        if (lastContactDate) {
+                          applyLastContact(null, null);
+                        } else {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          applyLastContact(today, 0);
+                        }
                       }}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
                         theme === "light"

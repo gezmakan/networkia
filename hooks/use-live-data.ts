@@ -55,7 +55,8 @@ export function useLiveData(userId: string) {
         body: JSON.stringify(input),
       });
       if (!response.ok) {
-        throw new Error('Failed to update contact');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update contact: ${response.status}`);
       }
       return response.json() as Promise<Contact>;
     },

@@ -11,7 +11,7 @@ export interface Contact {
   initials?: string;
   tags?: string[];
   isQuickContact?: boolean;
-  lastContact?: string;
+  lastContact?: string | null;
   nextMeetDate?: string | null;
   profileFields?: any;
   personalNotes?: string;

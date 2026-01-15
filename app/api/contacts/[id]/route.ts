@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
 // Helper to compute daysAgo
-function computeDaysAgo(lastContact: Date): number {
+function computeDaysAgo(lastContact: Date | null): number | null {
+  if (!lastContact) {
+    return null;
+  }
   const now = new Date();
   const diff = now.getTime() - lastContact.getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -114,21 +117,53 @@ export async function PATCH(
     if (personalNotes !== undefined) updateData.personalNotes = personalNotes;
     if (shareToken !== undefined) updateData.shareToken = shareToken;
     if (isShared !== undefined) updateData.isShared = isShared;
-    if (lastContact !== undefined)
-      updateData.lastContact = new Date(lastContact);
-    if (nextMeetDate !== undefined)
-      updateData.nextMeetDate = nextMeetDate ? new Date(nextMeetDate) : null;
+    // Handle lastContact: null/empty clears it, valid date updates it, undefined skips it
+    if (lastContact !== undefined) {
+      if (lastContact === null || lastContact === "") {
+        updateData.lastContact = null;
+      } else {
+        const parsedLastContact = new Date(lastContact);
+        if (!isNaN(parsedLastContact.getTime())) {
+          updateData.lastContact = parsedLastContact;
+        } else {
+          updateData.lastContact = null;
+        }
+      }
+    }
+
+    // Handle nextMeetDate: null/empty clears it, valid date updates it, undefined skips it
+    if (nextMeetDate !== undefined) {
+      if (nextMeetDate === null || nextMeetDate === "") {
+        updateData.nextMeetDate = null;
+      } else {
+        const parsedNextMeetDate = new Date(nextMeetDate);
+        if (!isNaN(parsedNextMeetDate.getTime())) {
+          updateData.nextMeetDate = parsedNextMeetDate;
+        } else {
+          updateData.nextMeetDate = null;
+        }
+      }
+    }
 
     const contact = await prisma.contact.update({
       where: {
         id,
       },
       data: updateData,
+      include: {
+        interactions: true,
+      },
     });
 
     const contactWithDaysAgo = {
       ...contact,
       daysAgo: computeDaysAgo(contact.lastContact),
+      interactionNotes: contact.interactions.map((interaction) => ({
+        id: interaction.id,
+        title: interaction.title,
+        body: interaction.body,
+        date: interaction.date.toISOString(),
+      })),
     };
 
     return Response.json(contactWithDaysAgo);
