@@ -247,7 +247,9 @@ export default function Dashboard() {
     setContactName(quickContact.name);
     setContactLocation(quickContact.location ?? "");
     setContactNotes(
-      isLiveMode ? quickContact.personalNotes ?? "" : quickContact.notes ?? ""
+      isLiveMode
+        ? ((quickContact as { personalNotes?: string }).personalNotes ?? "")
+        : ((quickContact as { notes?: string }).notes ?? "")
     );
     setIsContactModalOpen(true);
   };
