@@ -33,7 +33,7 @@ export interface CreateContactInput {
   isQuickContact?: boolean;
   profileFields?: any;
   personalNotes?: string;
-  lastContact?: string;
+  lastContact?: string | null;
   nextMeetDate?: string | null;
   shareToken?: string | null;
   isShared?: boolean;
