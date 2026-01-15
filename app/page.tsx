@@ -870,14 +870,15 @@ export default function Dashboard() {
     (contactsPage - 1) * contactsPerPage,
     contactsPage * contactsPerPage
   );
-  const checkInContacts = [...allContacts]
-    .filter((contact) => contact.nextMeetDate)
+  const checkInContacts = (isLiveMode ? dbContacts : allContacts)
+    .filter((contact: any) => contact.nextMeetDate)
     .sort((a, b) => {
       const aDate = a.nextMeetDate ? new Date(a.nextMeetDate).getTime() : 0;
       const bDate = b.nextMeetDate ? new Date(b.nextMeetDate).getTime() : 0;
       return aDate - bDate;
     });
 
+  const activitySource = isLiveMode ? dbContacts : extraContacts;
   const recentActivity = isDemoMode
     ? [
         { text: "Added note to Edward Norton", time: "2h ago" },
@@ -885,9 +886,9 @@ export default function Dashboard() {
         { text: "Updated Sarah Chen profile", time: "1d ago" },
         { text: "Coffee with Mike", time: "3d ago" },
       ]
-    : extraContacts
-        .flatMap((contact) => {
-          const notes = (contact.interactionNotes ?? []).map((note) => ({
+    : activitySource
+        .flatMap((contact: any) => {
+          const notes = (contact.interactionNotes ?? []).map((note: any) => ({
             text: `${note.title || "Interaction"} · ${contact.name}`,
             time: formatPastFromDate(note.date),
             timestamp: new Date(note.date).getTime(),
@@ -903,10 +904,13 @@ export default function Dashboard() {
             : [];
           return [...notes, ...nextMeetEvents];
         })
-        .filter((activity) => !Number.isNaN(activity.timestamp))
-        .sort((a, b) => b.timestamp - a.timestamp)
+        .filter((activity: any) => !Number.isNaN(activity.timestamp))
+        .sort((a: any, b: any) => b.timestamp - a.timestamp)
         .slice(0, 4)
-        .map(({ text, time }) => ({ text, time }));
+        .map(({ text, time }: { text: string; time: string }) => ({
+          text,
+          time,
+        }));
   const selectedCircleSet = new Set(
     selectedCircleFilters.map((filter) => filter.toLowerCase())
   );
@@ -1059,14 +1063,15 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {checkInContacts.slice(0, 4).map((contact) => {
-                    const profileHref = contact.id.startsWith("full-")
-                      ? `/contact/${
-                          "slug" in contact && contact.slug
+                  {checkInContacts.slice(0, 4).map((contact: any) => {
+                    const isQuickContact = Boolean(contact.isQuick || contact.isQuickContact);
+                    const profileHref = isQuickContact
+                      ? `/contacts?quickId=${contact.id}`
+                      : `/contact/${
+                          contact.slug
                             ? contact.slug
                             : createContactSlug(contact.name, contact.id)
-                        }`
-                      : "/contact/new?new=1";
+                        }`;
 
                     return (
                       <Link
