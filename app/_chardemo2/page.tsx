@@ -585,9 +585,6 @@ export default function CharacterDemo2({
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  const isLiveMode = Boolean(session?.user?.email);
-  const isContactsLoaded = isLiveMode ? !isLoadingLiveContacts : areContactsLoaded;
-
   useEffect(() => {
     if (shareToken) {
       setShareUrl(`${window.location.origin}/share/${shareToken}`);
@@ -635,6 +632,8 @@ export default function CharacterDemo2({
   const [draftCircleSettings, setDraftCircleSettings] = useState<CircleSetting[]>(
     circleSettings
   );
+  const isLiveMode = Boolean(session?.user?.email);
+  const isContactsLoaded = isLiveMode ? !isLoadingLiveContacts : areContactsLoaded;
   const activeCircles = circleSettings
     .filter((circle) => circle.isActive && circle.name.trim())
     .map((circle) => circle.name.trim());
