@@ -25,6 +25,7 @@ export function useLiveData(userId: string) {
       }
       return response.json() as Promise<Contact[]>;
     },
+    enabled: !!userId, // Only fetch when user is logged in
   });
 
   // Add contact mutation

@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useScopedLocalStorage } from "@/hooks/use-scoped-local-storage";
 import { useContacts } from "@/hooks/use-contacts";
 import {
@@ -271,6 +272,7 @@ export default function CharacterDemo2({
   );
   const { data: session } = useSession();
   const isLiveMode = Boolean(session?.user?.email);
+  const queryClient = useQueryClient();
   const {
     contacts: liveContacts,
     isLoading: isLoadingLiveContacts,
@@ -811,6 +813,8 @@ export default function CharacterDemo2({
     if (!response.ok) {
       throw new Error("Failed to create interaction");
     }
+    // Invalidate contacts query so dashboard Recent Activity updates
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
     return (await response.json()) as InteractionNote;
   };
   const updateInteraction = async (payload: {
@@ -827,6 +831,8 @@ export default function CharacterDemo2({
     if (!response.ok) {
       throw new Error("Failed to update interaction");
     }
+    // Invalidate contacts query so dashboard Recent Activity updates
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
     return (await response.json()) as InteractionNote;
   };
   const deleteInteraction = async (id: string) => {
@@ -836,6 +842,8 @@ export default function CharacterDemo2({
     if (!response.ok) {
       throw new Error("Failed to delete interaction");
     }
+    // Invalidate contacts query so dashboard Recent Activity updates
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
   };
   const openNewInteraction = () => {
     const today = new Date().toISOString().split("T")[0];

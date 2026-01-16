@@ -57,7 +57,7 @@ export function AppNavbar({
             className="h-8 w-8"
             priority
           />
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-rose-500 bg-clip-text text-transparent">
+          <span className="hidden sm:inline bg-gradient-to-r from-blue-600 via-indigo-500 to-rose-500 bg-clip-text text-transparent">
             Networkia
           </span>
         </Link>
