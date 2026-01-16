@@ -8,7 +8,7 @@ const DEFAULT_CIRCLES = [
   { name: "Friend", isActive: true, order: 1 },
   { name: "Relative", isActive: true, order: 2 },
   { name: "Work", isActive: true, order: 3 },
-  { name: "Acquaintance", isActive: true, order: 4 },
+  { name: "New", isActive: true, order: 4 },
   { name: "Circle 6", isActive: false, order: 5 },
   { name: "Circle 7", isActive: false, order: 6 },
   { name: "Circle 8", isActive: false, order: 7 },

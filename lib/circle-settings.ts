@@ -9,7 +9,7 @@ export const getDefaultCircleSettings = (): CircleSetting[] => [
   { id: "circle-2", name: "Friend", isActive: true },
   { id: "circle-3", name: "Relative", isActive: true },
   { id: "circle-4", name: "Work", isActive: true },
-  { id: "circle-5", name: "Acquaintance", isActive: true },
+  { id: "circle-5", name: "New", isActive: true },
   { id: "circle-6", name: "", isActive: false },
   { id: "circle-7", name: "", isActive: false },
   { id: "circle-8", name: "", isActive: false },

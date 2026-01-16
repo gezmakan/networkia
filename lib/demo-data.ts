@@ -183,7 +183,7 @@ export const generateDemoContacts = () => {
       location: 'London',
       email: 'itsraw@hk.com',
       phone: '+44 (20) F-WORD',
-      tags: ['Acquaintance'],
+      tags: ['New'],
       lastContact: '2026-01-09',
       personalNotes: 'Made him dinner. He called it "an insult to food." Then ate three plates. Asked for the recipe. Refuses to admit it was good. Classic Gordon.',
       profileFields: [
@@ -305,7 +305,7 @@ export const generateDemoContacts = () => {
       location: 'Unknown (changes weekly)',
       email: 'ye@ye.ye',
       phone: '+1 (312) I-AM-GOD',
-      tags: ['Acquaintance'],
+      tags: ['New'],
       lastContact: '2025-12-26',
       personalNotes: 'Had a 3-hour conversation. He spoke for 2 hours 59 minutes. Topic was "Why Kanye is the Greatest Artist Ever." Evidence provided: "because I am." Hard to argue with that confidence. Now sells $200 hoodies with holes.',
       profileFields: [

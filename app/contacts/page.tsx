@@ -53,8 +53,6 @@ type QuickContact = {
 
 export default function ContactsPage() {
   const [theme, setTheme] = useState<Theme>("light");
-  const [locationFilter, setLocationFilter] = useState("All");
-  const [circleFilters, setCircleFilters] = useState<string[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -84,6 +82,31 @@ export default function ContactsPage() {
     liveKeyPrefix: "live_full_contacts_",
     initialValue: [],
   });
+  const {
+    value: contactFilterState,
+    setValue: setContactFilterState,
+  } = useScopedLocalStorage<{
+    location: string;
+    circles: string[];
+  }>({
+    demoKey: "demo_contacts_filters",
+    liveKeyPrefix: "live_contacts_filters_",
+    initialValue: { location: "All", circles: [] },
+  });
+  const locationFilter = contactFilterState.location;
+  const circleFilters = contactFilterState.circles;
+  const setLocationFilter = (location: string) => {
+    setContactFilterState((current) => ({ ...current, location }));
+  };
+  const setCircleFilters = (
+    nextValue: string[] | ((current: string[]) => string[])
+  ) => {
+    setContactFilterState((current) => ({
+      ...current,
+      circles:
+        typeof nextValue === "function" ? nextValue(current.circles) : nextValue,
+    }));
+  };
   const isDemoMode = (fullContactsStorageKey ?? "").startsWith("demo_");
   const { value: circleSettings, setValue: setCircleSettings } =
     useScopedLocalStorage<CircleSetting[]>({
