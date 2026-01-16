@@ -1404,14 +1404,14 @@ export default function Dashboard() {
                         />
                         <div className="flex-1 min-w-0">
                           <p
-                            className={`text-sm leading-snug ${
+                            className={`text-base leading-snug ${
                               theme === "light" ? "text-gray-800" : "text-gray-200"
                             }`}
                           >
                             {activity.title}
                           </p>
                           <p
-                            className={`text-xs mt-0.5 ${
+                            className={`text-sm mt-0.5 ${
                               theme === "light" ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
@@ -1426,9 +1426,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right Column - Check-ins */}
+          {/* Right Column - Check-ins (first on mobile) */}
           <div
-            className={`rounded-2xl p-6 border transition-all duration-300 h-fit ${
+            className={`rounded-2xl p-6 border transition-all duration-300 h-fit order-first lg:order-none ${
               theme === "light"
                 ? "bg-white border-gray-200 shadow-sm"
                 : "bg-gray-800 border-gray-700 shadow-xl"
@@ -1472,7 +1472,7 @@ export default function Dashboard() {
                       }`}
                     >
                       <span
-                        className={`text-sm font-medium ${
+                        className={`text-base font-medium ${
                           theme === "light"
                             ? "text-gray-900"
                             : "text-gray-100"
@@ -1481,7 +1481,7 @@ export default function Dashboard() {
                         {contact.name}
                       </span>
                       <span
-                        className={`text-xs ${
+                        className={`text-sm ${
                           theme === "light"
                             ? "text-gray-500"
                             : "text-gray-400"

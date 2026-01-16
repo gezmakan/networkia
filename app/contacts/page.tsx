@@ -710,6 +710,32 @@ export default function ContactsPage() {
     return sorted;
   }, [filteredContacts, sortDirection, sortKey]);
 
+  // Count contacts per circle (based on location filter only, not circle filter)
+  const contactCountsByCircle = useMemo(() => {
+    const baseFiltered = allContacts.filter((contact) => {
+      if (searchTerm) {
+        const tagsText = contact.tags.join(" ").toLowerCase();
+        const noteText = contact.notes ? contact.notes.toLowerCase() : "";
+        return (
+          contact.name.toLowerCase().includes(searchTerm) ||
+          contact.location.toLowerCase().includes(searchTerm) ||
+          tagsText.includes(searchTerm) ||
+          noteText.includes(searchTerm)
+        );
+      }
+      return locationFilter === "All" || contact.location === locationFilter;
+    });
+
+    const counts: Record<string, number> = { all: baseFiltered.length };
+    for (const circle of visibleCircles) {
+      const key = circle.toLowerCase();
+      counts[key] = baseFiltered.filter((contact) =>
+        contact.tags.some((tag) => tag.toLowerCase() === key)
+      ).length;
+    }
+    return counts;
+  }, [allContacts, locationFilter, searchTerm, visibleCircles]);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <AppNavbar
@@ -730,36 +756,7 @@ export default function ContactsPage() {
           <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <h1
-                className={`text-xl font-semibold ${
-                  theme === "light" ? "text-gray-900" : "text-gray-100"
-                }`}
-              >
-                All Contacts
-              </h1>
-              <span
-                className={`text-sm px-2.5 py-0.5 rounded-full ${
-                  theme === "light"
-                    ? "bg-gray-100 text-gray-600"
-                    : "bg-gray-800 text-gray-400"
-                }`}
-              >
-                {sortedContacts.length}
-              </span>
             </div>
-            <button
-              onClick={() => {
-                resetContactForm();
-                setIsContactModalOpen(true);
-              }}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                theme === "light"
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-cyan-600 hover:bg-cyan-500 text-white"
-              }`}
-            >
-              Add contact
-            </button>
           </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -800,7 +797,7 @@ export default function ContactsPage() {
               <button
                 type="button"
                 onClick={() => setCircleFilters([])}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                className={`rounded-full px-3 py-1 text-xs md:text-sm font-medium transition-all ${
                   circleFilters.length === 0
                     ? theme === "light"
                       ? "bg-blue-500 text-white"
@@ -810,11 +807,12 @@ export default function ContactsPage() {
                     : "bg-gray-800 text-gray-200 hover:bg-gray-700"
                 }`}
               >
-                All
+                All ({contactCountsByCircle.all})
               </button>
               {visibleCircles.map((circle) => {
                 const key = circle.toLowerCase();
                 const isActive = circleFilters.includes(key);
+                const count = contactCountsByCircle[key] || 0;
                 return (
                   <button
                     key={circle}
@@ -826,7 +824,7 @@ export default function ContactsPage() {
                           : [...current, key]
                       )
                     }
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                    className={`rounded-full px-3 py-1 text-xs md:text-sm font-medium transition-all ${
                       isActive
                         ? theme === "light"
                           ? "bg-blue-500 text-white"
@@ -836,7 +834,7 @@ export default function ContactsPage() {
                         : "bg-gray-800 text-gray-200 hover:bg-gray-700"
                     }`}
                   >
-                    {circle}
+                    {circle} ({count})
                   </button>
                 );
               })}
