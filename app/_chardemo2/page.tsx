@@ -12,6 +12,7 @@ import { useContacts } from "@/hooks/use-contacts";
 import { useCircles } from "@/hooks/use-circles";
 import { type CircleSetting } from "@/lib/circle-settings";
 import { createContactSlug, matchesContactSlug } from "@/lib/contact-slug";
+import { demoContacts } from "@/lib/demo-contacts";
 import { AppNavbar } from "@/app/components/AppNavbar";
 
 type Theme = "light" | "dark";
@@ -714,7 +715,7 @@ export default function CharacterDemo2({
     value.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const normalizedContacts = useMemo(() => {
     const source = isLiveMode ? liveContacts : storedContacts;
-    return source.map((contact: any) => ({
+    const mapped = source.map((contact: any) => ({
       id: contact.id,
       slug: contact.slug,
       initials: contact.initials || "",
@@ -732,6 +733,29 @@ export default function CharacterDemo2({
       isShared: contact.isShared ?? false,
       isQuickContact: contact.isQuickContact ?? false,
     })) as StoredContact[];
+    // In demo mode, also include the hardcoded demo contacts
+    if (!isLiveMode) {
+      const demoMapped = demoContacts.map((contact) => ({
+        id: contact.id,
+        slug: undefined,
+        initials: contact.initials,
+        name: contact.name,
+        title: contact.title || "",
+        location: contact.location,
+        tags: contact.tags,
+        lastContact: contact.lastContact,
+        daysAgo: contact.daysAgo,
+        profileFields: [],
+        nextMeetDate: contact.nextMeetDate ?? null,
+        personalNotes: "",
+        interactionNotes: [],
+        shareToken: null,
+        isShared: false,
+        isQuickContact: false,
+      })) as StoredContact[];
+      return [...mapped, ...demoMapped];
+    }
+    return mapped;
   }, [isLiveMode, liveContacts, storedContacts]);
   const loadStoredContacts = () => normalizedContacts;
   const saveStoredContacts = (contacts: StoredContact[]) => {
