@@ -76,6 +76,9 @@ export default function Dashboard() {
   const [nextMeetEditingContact, setNextMeetEditingContact] = useState<Contact | null>(null);
   const [nextMeetDraft, setNextMeetDraft] = useState<string | null>(null);
   const [nextMeetCadenceDraft, setNextMeetCadenceDraft] = useState<NextMeetCadence | null>(null);
+  const [showLastContactPopup, setShowLastContactPopup] = useState(false);
+  const [lastContactEditingContact, setLastContactEditingContact] = useState<Contact | null>(null);
+  const [lastContactDraft, setLastContactDraft] = useState<string | null>(null);
   const {
     value: contactSortState,
     setValue: setContactSortState,
@@ -698,6 +701,33 @@ export default function Dashboard() {
       )
     );
   };
+  const updateLastContact = async (contact: Contact, dateIso: string | null) => {
+    const daysAgo = dateIso ? getDaysAgoFromDate(dateIso) : null;
+    if (isLiveMode) {
+      await updateContact({
+        id: contact.id,
+        lastContact: dateIso || "",
+      });
+      return;
+    }
+    if (contact.isQuick) {
+      setQuickContacts((current) =>
+        current.map((item) =>
+          item.id === contact.id
+            ? { ...item, lastContact: dateIso || "", daysAgo }
+            : item
+        )
+      );
+      return;
+    }
+    setExtraContacts((current) =>
+      current.map((item) =>
+        item.id === contact.id
+          ? { ...item, lastContact: dateIso || "", daysAgo }
+          : item
+      )
+    );
+  };
   const updateNextMeet = async (
     contact: Contact,
     nextMeetDate: string | null,
@@ -1179,17 +1209,28 @@ export default function Dashboard() {
                       >
                         {contact.location}
                       </div>
-                      <div
-                        className={`text-sm ${
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setLastContactEditingContact(contact);
+                          // Convert lastContact to ISO format if it's a date string
+                          const lc = contact.lastContact;
+                          const isoDate = lc?.includes("-") ? lc.split("T")[0] : null;
+                          setLastContactDraft(isoDate);
+                          setShowLastContactPopup(true);
+                        }}
+                        className={`text-sm text-left hover:underline ${
                           contact.status === "overdue"
-                            ? "text-red-500"
+                            ? "text-red-500 hover:text-red-600"
                             : theme === "light"
-                            ? "text-gray-600"
-                            : "text-gray-400"
+                            ? "text-gray-600 hover:text-blue-600"
+                            : "text-gray-400 hover:text-cyan-400"
                         }`}
                       >
                         {getContactRelative(contact)}
-                      </div>
+                      </button>
                       {activeFilter === "overdue" && (
                         <div
                           className={`text-sm text-right ${
@@ -2459,6 +2500,134 @@ export default function Dashboard() {
                       nextMeetCadenceDraft
                     );
                     setShowNextMeetPopup(false);
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
+                    theme === "light"
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "bg-cyan-600 hover:bg-cyan-500 text-white"
+                  }`}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLastContactPopup && lastContactEditingContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            aria-label="Close"
+            onClick={() => setShowLastContactPopup(false)}
+          />
+          <div
+            className={`relative z-10 w-[92vw] max-w-[440px] rounded-xl border shadow-xl p-4 ${
+              theme === "light"
+                ? "bg-white border-gray-200"
+                : "bg-gray-800 border-gray-700"
+            }`}
+          >
+            <button
+              onClick={() => setShowLastContactPopup(false)}
+              className={`absolute right-3 top-3 text-sm font-semibold ${
+                theme === "light"
+                  ? "text-gray-500 hover:text-gray-700"
+                  : "text-gray-400 hover:text-gray-200"
+              }`}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div
+              className={`text-sm font-medium mb-3 ${
+                theme === "light" ? "text-gray-700" : "text-gray-300"
+              }`}
+            >
+              Last contact with {lastContactEditingContact.name}
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label
+                  className={`text-xs font-semibold mb-2 block ${
+                    theme === "light" ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  Pick a date
+                </label>
+                <input
+                  type="date"
+                  value={lastContactDraft || ""}
+                  onChange={(e) => setLastContactDraft(e.target.value)}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
+                    theme === "light"
+                      ? "border-gray-300 bg-white text-gray-900 focus:border-blue-500"
+                      : "border-gray-600 bg-gray-900 text-gray-100 focus:border-cyan-500"
+                  } focus:outline-none`}
+                />
+              </div>
+
+              <div>
+                <label
+                  className={`text-xs font-semibold mb-2 block ${
+                    theme === "light" ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  Quick set
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { label: "Today", days: 0 },
+                    { label: "Yesterday", days: 1 },
+                    { label: "Last week", days: 7 },
+                  ].map((option) => (
+                    <button
+                      key={option.label}
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - option.days);
+                        setLastContactDraft(date.toISOString().split("T")[0]);
+                      }}
+                      className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
+                        theme === "light"
+                          ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                          : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                {lastContactDraft && (
+                  <button
+                    onClick={() => setLastContactDraft(null)}
+                    className={`flex-1 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                      theme === "light"
+                        ? "text-red-600 hover:bg-red-50"
+                        : "text-red-400 hover:bg-red-900/20"
+                    }`}
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowLastContactPopup(false)}
+                  className={`flex-1 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                    theme === "light"
+                      ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                      : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    updateLastContact(lastContactEditingContact, lastContactDraft);
+                    setShowLastContactPopup(false);
                   }}
                   className={`flex-1 px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
                     theme === "light"
