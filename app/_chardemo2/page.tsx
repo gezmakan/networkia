@@ -251,6 +251,7 @@ export default function CharacterDemo2({
   >(null);
   const [showDeleteInteractionConfirm, setShowDeleteInteractionConfirm] =
     useState(false);
+  const [isSavingInteraction, setIsSavingInteraction] = useState(false);
   const [contactId, setContactId] = useState<string | null>(null);
   const [isNewContact, setIsNewContact] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -2661,11 +2662,14 @@ export default function CharacterDemo2({
                         </button>
                       )}
                       <button
+                        disabled={isSavingInteraction}
                         onClick={async () => {
+                          if (isSavingInteraction) return;
                           const trimmedBody = interactionDraft.body.trim();
                           if (!trimmedBody) {
                             return;
                           }
+                          setIsSavingInteraction(true);
                           const title =
                             interactionDraft.title.trim() || "Interaction";
                           const date =
@@ -2689,6 +2693,7 @@ export default function CharacterDemo2({
                             }
                             const nextNotes = await fetchInteractions(contactId);
                             setInteractionNotes(nextNotes);
+                            setIsSavingInteraction(false);
                             setIsInteractionModalOpen(false);
                             return;
                           }
@@ -2708,15 +2713,16 @@ export default function CharacterDemo2({
                               )
                             : [nextNote, ...interactionNotes];
                           applyInteractionNotes(nextNotes);
+                          setIsSavingInteraction(false);
                           setIsInteractionModalOpen(false);
                         }}
                         className={`px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
                           theme === "light"
-                            ? "bg-blue-500 hover:bg-blue-600 text-white"
-                            : "bg-cyan-600 hover:bg-cyan-500 text-white"
-                        }`}
+                            ? "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300"
+                            : "bg-cyan-600 hover:bg-cyan-500 text-white disabled:bg-cyan-800"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
                       >
-                        Save
+                        {isSavingInteraction ? "Saving..." : "Save"}
                       </button>
                     </div>
                   </div>
