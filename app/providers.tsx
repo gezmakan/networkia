@@ -1,6 +1,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import type { Session } from "next-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { ThemeProvider, type Theme } from "./theme-context";
@@ -8,9 +9,11 @@ import { ThemeProvider, type Theme } from "./theme-context";
 export function Providers({
   children,
   initialTheme,
+  session,
 }: {
   children: React.ReactNode;
   initialTheme: Theme;
+  session?: Session | null;
 }) {
   // Create a new QueryClient instance per component mount
   // This ensures clean state and proper cache isolation
@@ -27,7 +30,7 @@ export function Providers({
   );
 
   return (
-    <SessionProvider>
+    <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>
       </QueryClientProvider>
