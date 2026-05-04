@@ -38,55 +38,65 @@ export function AppNavbar({
 
   return (
     <nav
-      className={`sticky top-0 z-20 w-full border-b ${
+      className={`sticky top-0 z-20 w-full border-b backdrop-blur-xl ${
         theme === "light"
-          ? "bg-[#213343]/95 border-[#1b2a3a] shadow-lg"
-          : "bg-[#0b141f]/95 border-[#0f1b2a] shadow-xl"
+          ? "bg-white/85 border-slate-200/80 shadow-[0_1px_0_rgba(15,23,42,0.03)]"
+          : "bg-slate-950/82 border-slate-800/80 shadow-[0_1px_0_rgba(255,255,255,0.04)]"
       }`}
     >
-      <div className="max-w-7xl mx-auto flex items-center gap-4 py-2 pl-2 pr-4 md:gap-6 md:pl-4 md:pr-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2.5 md:gap-4 md:px-6">
         <Link
           href="/"
-          className="flex items-center gap-2 text-2xl font-bold tracking-tight"
+          className="flex items-center gap-2 rounded-lg px-1 py-1 text-xl font-semibold tracking-tight"
         >
           <Image
             src="/networkia-logo.png"
             alt="Networkia logo"
             width={34}
             height={34}
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-md"
             priority
           />
-          <span className="hidden sm:inline bg-gradient-to-r from-[#00a4bd] via-[#4fb06d] to-[#ff7a59] bg-clip-text text-transparent">
+          <span
+            className={`hidden sm:inline ${
+              theme === "light" ? "text-slate-950" : "text-slate-50"
+            }`}
+          >
             Networkia
           </span>
         </Link>
-        <div className="flex-1 min-w-0 overflow-x-auto">
-          <div className="flex items-center justify-end gap-4 text-sm font-medium whitespace-nowrap md:gap-6">
+        <div className="min-w-0 flex-1 overflow-x-auto">
+          <div
+            className={`ml-auto flex w-fit items-center gap-1 whitespace-nowrap rounded-lg border p-1 text-sm font-medium ${
+              theme === "light"
+                ? "border-slate-200 bg-slate-100/80 text-slate-600"
+                : "border-slate-800 bg-slate-900/80 text-slate-300"
+            }`}
+          >
           <Link
             href="/"
-            className={`transition-colors ${
+            className={`rounded-md px-3 py-1.5 transition-colors ${
               active === "dashboard"
                 ? theme === "light"
-                  ? "text-white"
-                  : "text-slate-100"
+                  ? "bg-white text-slate-950 shadow-sm"
+                  : "bg-slate-800 text-white shadow-sm"
                 : theme === "light"
-                ? "text-slate-300 hover:text-white"
-                : "text-slate-400 hover:text-slate-100"
+                ? "hover:bg-white/70 hover:text-slate-950"
+                : "hover:bg-slate-800/70 hover:text-white"
             }`}
           >
             Dashboard
           </Link>
           <Link
             href="/contacts"
-            className={`transition-colors ${
+            className={`rounded-md px-3 py-1.5 transition-colors ${
               active === "contacts"
                 ? theme === "light"
-                  ? "text-white"
-                  : "text-slate-100"
+                  ? "bg-white text-slate-950 shadow-sm"
+                  : "bg-slate-800 text-white shadow-sm"
                 : theme === "light"
-                ? "text-slate-300 hover:text-white"
-                : "text-slate-400 hover:text-slate-100"
+                ? "hover:bg-white/70 hover:text-slate-950"
+                : "hover:bg-slate-800/70 hover:text-white"
             }`}
           >
             Contacts
@@ -94,10 +104,10 @@ export function AppNavbar({
           {onAddContact && (
             <button
               onClick={onAddContact}
-              className={`transition-colors ${
+              className={`rounded-md px-3 py-1.5 transition-colors ${
                 theme === "light"
-                  ? "text-slate-300 hover:text-white"
-                  : "text-slate-400 hover:text-slate-100"
+                  ? "hover:bg-white/70 hover:text-slate-950"
+                  : "hover:bg-slate-800/70 hover:text-white"
               }`}
             >
               Add new
@@ -124,19 +134,19 @@ export function AppNavbar({
                   onSearchChange?.("");
                 }
               }}
-              className={`px-3 py-1.5 rounded-lg border transition-all duration-200 ${
+              className={`h-9 w-[min(46vw,260px)] rounded-lg border px-3 text-sm transition-all duration-200 ${
                 theme === "light"
-                  ? "border-[#2b3f55] bg-[#1b2d42] text-slate-100 placeholder-slate-400 focus:border-[#00a4bd]"
-                  : "border-slate-700 bg-[#0f1b2a] text-slate-100 placeholder-slate-500 focus:border-[#00a4bd]"
+                  ? "border-slate-300 bg-white text-slate-950 placeholder-slate-400 focus:border-[#00a4bd] focus:ring-4 focus:ring-cyan-500/10"
+                  : "border-slate-700 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-[#00a4bd] focus:ring-4 focus:ring-cyan-500/10"
               } focus:outline-none`}
             />
           ) : (
             <button
               onClick={() => setIsSearchOpen(true)}
-              className={`px-2 py-1.5 rounded-lg transition-all duration-200 text-base ${
+              className={`grid h-9 w-9 place-items-center rounded-lg border transition-all duration-200 text-base ${
                 theme === "light"
-                  ? "text-slate-200 hover:text-white"
-                  : "text-slate-200 hover:text-white"
+                  ? "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950"
+                  : "border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:text-white"
               }`}
               aria-label="Open search"
             >
@@ -145,10 +155,10 @@ export function AppNavbar({
           )}
           <button
             onClick={onToggleTheme}
-            className={`px-2 py-1.5 rounded-lg transition-all duration-200 text-lg ${
+            className={`grid h-9 w-9 place-items-center rounded-lg border transition-all duration-200 text-base ${
               theme === "light"
-                ? "text-slate-200 hover:text-white"
-                : "text-slate-200 hover:text-white"
+                ? "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950"
+                : "border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:text-white"
             }`}
             aria-label="Toggle theme"
           >
@@ -157,10 +167,10 @@ export function AppNavbar({
           {!session && (
             <button
               onClick={() => signIn("google")}
-              className={`hidden sm:inline-flex px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`hidden h-9 items-center rounded-lg px-3 text-sm font-semibold transition-all duration-200 sm:inline-flex ${
                 theme === "light"
-                  ? "bg-[#ff7a59] text-white hover:bg-[#ff8f70]"
-                  : "bg-[#00a4bd] text-white hover:bg-[#1bb4c5]"
+                  ? "bg-slate-950 text-white hover:bg-slate-800"
+                  : "bg-white text-slate-950 hover:bg-slate-200"
               }`}
             >
               Sign In

@@ -1274,52 +1274,52 @@ export default function DashboardClient() {
   const renderDashboardContent = () => {
     if (!isDashboardReady) {
       return (
-        <div className="max-w-7xl mx-auto px-4 pt-10 pb-24 md:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-6 animate-pulse">
+        <div className="mx-auto max-w-7xl px-4 pb-24 pt-8 md:px-6">
+          <div className="grid grid-cols-1 gap-5 animate-pulse lg:grid-cols-[1fr_360px]">
             <div className="space-y-6">
               <div
-                className={`rounded-2xl p-6 border ${
+                className={`rounded-lg border p-5 ${
                   theme === "light"
-                    ? "bg-white border-gray-200"
-                    : "bg-gray-800 border-gray-700"
+                    ? "border-slate-200 bg-white"
+                    : "border-slate-800 bg-slate-900"
                 }`}
               >
-                <div className="h-4 w-24 rounded bg-gray-200/70" />
+                <div className="h-4 w-24 rounded bg-slate-200/70" />
                 <div className="mt-6 space-y-3">
-                  <div className="h-10 rounded bg-gray-200/70" />
-                  <div className="h-10 rounded bg-gray-200/70" />
+                  <div className="h-10 rounded bg-slate-200/70" />
+                  <div className="h-10 rounded bg-slate-200/70" />
                 </div>
               </div>
               <div
-                className={`rounded-2xl p-6 border ${
+                className={`rounded-lg border p-5 ${
                   theme === "light"
-                    ? "bg-white border-gray-200"
-                    : "bg-gray-800 border-gray-700"
+                    ? "border-slate-200 bg-white"
+                    : "border-slate-800 bg-slate-900"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="h-8 w-32 rounded bg-gray-200/70" />
-                  <div className="h-6 w-44 rounded bg-gray-200/70" />
+                  <div className="h-8 w-32 rounded bg-slate-200/70" />
+                  <div className="h-6 w-44 rounded bg-slate-200/70" />
                 </div>
                 <div className="mt-6 space-y-3">
-                  <div className="h-10 rounded bg-gray-200/70" />
-                  <div className="h-10 rounded bg-gray-200/70" />
-                  <div className="h-10 rounded bg-gray-200/70" />
+                  <div className="h-10 rounded bg-slate-200/70" />
+                  <div className="h-10 rounded bg-slate-200/70" />
+                  <div className="h-10 rounded bg-slate-200/70" />
                 </div>
               </div>
             </div>
             <div
-              className={`rounded-2xl p-6 border ${
+              className={`rounded-lg border p-5 ${
                 theme === "light"
-                  ? "bg-white border-gray-200"
-                  : "bg-gray-800 border-gray-700"
+                  ? "border-slate-200 bg-white"
+                  : "border-slate-800 bg-slate-900"
               }`}
             >
-              <div className="h-4 w-28 rounded bg-gray-200/70" />
+              <div className="h-4 w-28 rounded bg-slate-200/70" />
               <div className="mt-6 space-y-3">
-                <div className="h-8 rounded bg-gray-200/70" />
-                <div className="h-8 rounded bg-gray-200/70" />
-                <div className="h-8 rounded bg-gray-200/70" />
+                <div className="h-8 rounded bg-slate-200/70" />
+                <div className="h-8 rounded bg-slate-200/70" />
+                <div className="h-8 rounded bg-slate-200/70" />
               </div>
             </div>
           </div>
@@ -1328,15 +1328,15 @@ export default function DashboardClient() {
     }
 
     return (
-      <div className="max-w-7xl mx-auto px-4 pt-10 pb-24 md:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-          <div className="space-y-6">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-8 md:px-6">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-5">
             {/* Contacts Card */}
             <div
-              className={`rounded-2xl p-6 border transition-all duration-300 ${
+              className={`rounded-lg border p-5 transition-all duration-300 ${
                 theme === "light"
-                  ? "bg-white border-gray-200 shadow-sm"
-                  : "bg-gray-800 border-gray-700 shadow-xl"
+                  ? "border-slate-200 bg-white shadow-sm shadow-slate-200/50"
+                  : "border-slate-800 bg-slate-900 shadow-xl shadow-black/20"
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -1356,15 +1356,15 @@ export default function DashboardClient() {
                         });
                         setContactsPage(1);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 ${
                         activeFilter === "circles" &&
                         selectedCircleFilters.includes(filter.key)
                           ? theme === "light"
-                            ? "bg-[#ff7a59] text-white"
-                            : "bg-[#00a4bd] text-white"
+                            ? "bg-slate-950 text-white"
+                            : "bg-white text-slate-950"
                           : theme === "light"
-                          ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                          ? "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-950"
+                          : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
                       }`}
                     >
                       {filter.label}
@@ -1379,10 +1379,10 @@ export default function DashboardClient() {
                     activeFilter === "overdue"
                       ? "grid-cols-[1.7fr_1.4fr_1fr_70px_90px] md:grid-cols-[1.6fr_1.2fr_0.8fr_140px_140px]"
                       : "grid-cols-[1.7fr_1.4fr_1fr_70px] md:grid-cols-[1.6fr_1.2fr_0.8fr_160px]"
-                  } gap-3 px-3 py-2 text-sm font-semibold rounded-lg ${
+                  } gap-3 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide ${
                     theme === "light"
-                      ? "bg-gray-50 text-gray-600"
-                      : "bg-gray-900/40 text-gray-300"
+                      ? "bg-slate-50 text-slate-500"
+                      : "bg-slate-950/60 text-slate-400"
                   }`}
                 >
                   <button
@@ -1398,8 +1398,8 @@ export default function DashboardClient() {
                     }}
                     className={`flex items-center gap-1 text-left transition-colors ${
                       theme === "light"
-                        ? "text-gray-500 hover:text-gray-700"
-                        : "text-gray-400 hover:text-gray-200"
+                        ? "text-slate-500 hover:text-slate-950"
+                        : "text-slate-400 hover:text-white"
                     }`}
                     aria-label="Sort by name"
                   >
@@ -1425,8 +1425,8 @@ export default function DashboardClient() {
                     }}
                     className={`flex items-center gap-1 text-left transition-colors ${
                       theme === "light"
-                        ? "text-gray-500 hover:text-gray-700"
-                        : "text-gray-400 hover:text-gray-200"
+                        ? "text-slate-500 hover:text-slate-950"
+                        : "text-slate-400 hover:text-white"
                     }`}
                     aria-label="Sort by city"
                   >
@@ -1451,8 +1451,8 @@ export default function DashboardClient() {
                     }}
                     className={`flex items-center gap-1 text-left transition-colors ${
                       theme === "light"
-                        ? "text-gray-500 hover:text-gray-700"
-                        : "text-gray-400 hover:text-gray-200"
+                        ? "text-slate-500 hover:text-slate-950"
+                        : "text-slate-400 hover:text-white"
                     }`}
                     aria-label="Sort by last contact"
                   >
@@ -1478,8 +1478,8 @@ export default function DashboardClient() {
                       }}
                       className={`flex items-center justify-end gap-1 text-right transition-colors ${
                         theme === "light"
-                          ? "text-gray-500 hover:text-gray-700"
-                          : "text-gray-400 hover:text-gray-200"
+                          ? "text-slate-500 hover:text-slate-950"
+                          : "text-slate-400 hover:text-white"
                       }`}
                       aria-label="Sort by next meet"
                     >
@@ -1567,10 +1567,10 @@ export default function DashboardClient() {
                         key={contact.id}
                         type="button"
                         onClick={() => openQuickContactEditor(contact.id)}
-                        className={`block w-full text-left p-3 rounded-xl transition-all duration-200 ${
+                        className={`block w-full rounded-lg p-3 text-left transition-all duration-200 ${
                           theme === "light"
-                            ? "hover:bg-gray-50"
-                            : "hover:bg-gray-900"
+                            ? "hover:bg-slate-50"
+                            : "hover:bg-slate-800/60"
                         }`}
                       >
                         {rowContent}
@@ -1590,10 +1590,10 @@ export default function DashboardClient() {
                     <Link
                       key={contact.id}
                       href={profileHref}
-                      className={`block p-3 rounded-xl transition-all duration-200 ${
+                      className={`block rounded-lg p-3 transition-all duration-200 ${
                         theme === "light"
-                          ? "hover:bg-gray-50"
-                          : "hover:bg-gray-900"
+                          ? "hover:bg-slate-50"
+                          : "hover:bg-slate-800/60"
                       }`}
                     >
                       {rowContent}
@@ -1617,8 +1617,8 @@ export default function DashboardClient() {
                     }
                     className={`px-2 py-1 text-sm rounded border transition-all duration-200 ${
                       theme === "light"
-                        ? "border-gray-300 bg-white text-gray-900"
-                        : "border-gray-600 bg-gray-800 text-gray-100"
+                        ? "border-slate-300 bg-white text-slate-950"
+                        : "border-slate-700 bg-slate-900 text-slate-100"
                     } focus:outline-none`}
                   >
                     {Array.from({ length: totalContactPages }, (_, index) => (
@@ -1638,8 +1638,8 @@ export default function DashboardClient() {
                     href="/contacts"
                     className={`hidden md:inline-flex px-3 py-1.5 text-xs rounded-lg border transition-all duration-200 ${
                       theme === "light"
-                        ? "border-gray-200 text-gray-600 hover:border-[#00a4bd] hover:text-[#00a4bd]"
-                        : "border-gray-700 text-gray-300 hover:border-cyan-700 hover:text-cyan-400"
+                        ? "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950"
+                        : "border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
                     View All
@@ -1650,10 +1650,10 @@ export default function DashboardClient() {
 
             {/* Recent Activity Card */}
             <div
-              className={`rounded-2xl p-5 border transition-all duration-300 ${
+              className={`rounded-lg border p-5 transition-all duration-300 ${
                 theme === "light"
-                  ? "bg-white border-gray-200 shadow-sm"
-                  : "bg-gray-800 border-gray-700 shadow-xl"
+                  ? "border-slate-200 bg-white shadow-sm shadow-slate-200/50"
+                  : "border-slate-800 bg-slate-900 shadow-xl shadow-black/20"
               }`}
             >
               <h2
@@ -1665,8 +1665,10 @@ export default function DashboardClient() {
               </h2>
               {recentActivity.length === 0 ? (
                 <div
-                  className={`rounded-xl border border-dashed px-6 py-8 text-center text-sm ${
-                    theme === "light" ? "text-gray-500" : "text-gray-400"
+                  className={`rounded-lg border border-dashed px-6 py-8 text-center text-sm ${
+                    theme === "light"
+                      ? "border-slate-200 bg-slate-50 text-slate-500"
+                      : "border-slate-800 bg-slate-950/40 text-slate-400"
                   }`}
                 >
                   Activity will show up here once you start logging notes.
@@ -1678,8 +1680,8 @@ export default function DashboardClient() {
                       key={idx}
                       className={`py-2.5 px-3 -mx-3 rounded-lg transition-colors ${
                         theme === "light"
-                          ? "hover:bg-gray-50"
-                          : "hover:bg-gray-700/50"
+                          ? "hover:bg-slate-50"
+                          : "hover:bg-slate-800/60"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -1720,10 +1722,10 @@ export default function DashboardClient() {
 
           {/* Right Column - Check-ins (first on mobile) */}
           <div
-            className={`rounded-2xl p-6 border transition-all duration-300 h-fit order-first lg:order-none ${
+            className={`order-first h-fit rounded-lg border p-5 transition-all duration-300 lg:order-none ${
               theme === "light"
-                ? "bg-white border-gray-200 shadow-sm"
-                : "bg-gray-800 border-gray-700 shadow-xl"
+                ? "border-slate-200 bg-white shadow-sm shadow-slate-200/50"
+                : "border-slate-800 bg-slate-900 shadow-xl shadow-black/20"
             }`}
           >
             <h2
@@ -1735,8 +1737,10 @@ export default function DashboardClient() {
             </h2>
             {checkInContacts.length === 0 ? (
               <div
-                className={`rounded-xl border border-dashed px-6 py-6 text-center text-sm ${
-                  theme === "light" ? "text-gray-500" : "text-gray-400"
+                className={`rounded-lg border border-dashed px-6 py-6 text-center text-sm ${
+                  theme === "light"
+                    ? "border-slate-200 bg-slate-50 text-slate-500"
+                    : "border-slate-800 bg-slate-950/40 text-slate-400"
                 }`}
               >
                 No check-ins yet. Add a next meet date to get started.
@@ -1795,8 +1799,8 @@ export default function DashboardClient() {
                       href={profileHref}
                       className={`grid grid-cols-[1fr_72px_84px] items-center gap-3 py-2 px-3 -mx-3 rounded-lg transition-colors ${
                         theme === "light"
-                          ? "hover:bg-gray-50"
-                          : "hover:bg-gray-700/50"
+                          ? "hover:bg-slate-50"
+                          : "hover:bg-slate-800/60"
                       } ${isPast ? "opacity-70" : ""}`}
                     >
                       <span
@@ -1854,8 +1858,8 @@ export default function DashboardClient() {
                                 ? "bg-red-100 text-gray-900"
                                 : "bg-red-900/40 text-red-300"
                               : theme === "light"
-                              ? "bg-gray-100 text-gray-600"
-                              : "bg-gray-800 text-gray-300"
+                              ? "bg-slate-100 text-slate-600"
+                              : "bg-slate-800 text-slate-300"
                           }`}
                         >
                           {status}
@@ -1922,7 +1926,13 @@ export default function DashboardClient() {
   };
 
   return (
-    <div className="h-screen transition-colors duration-300 flex flex-col overflow-hidden">
+    <div
+      className={`h-screen overflow-hidden transition-colors duration-300 flex flex-col ${
+        theme === "light"
+          ? "bg-slate-50 text-slate-950"
+          : "bg-slate-950 text-slate-100"
+      }`}
+    >
       <AppNavbar
         theme={theme}
         active="dashboard"
@@ -1941,10 +1951,10 @@ export default function DashboardClient() {
 
         {/* Footer */}
       <footer
-        className={`relative z-10 mt-32 border-t ${
+        className={`relative z-10 mt-24 border-t ${
           theme === "light"
-            ? "bg-gray-50 border-gray-200"
-            : "bg-gray-900 border-gray-800"
+            ? "border-slate-200 bg-white/60"
+            : "border-slate-800 bg-slate-950/60"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -1955,8 +1965,8 @@ export default function DashboardClient() {
                   onClick={() => setIsShareListOpen(true)}
                   className={`rounded-md px-2 py-1 transition-colors ${
                     theme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
+                      ? "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`}
                   aria-label="Share"
                 >
@@ -1966,8 +1976,8 @@ export default function DashboardClient() {
                   onClick={handleExportCalendar}
                   className={`rounded-md px-2 py-1 transition-colors ${
                     theme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
+                      ? "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`}
                   aria-label="Export calendar"
                 >
@@ -1977,8 +1987,8 @@ export default function DashboardClient() {
                   onClick={() => setIsSettingsOpen(true)}
                   className={`rounded-md px-2 py-1 transition-colors ${
                     theme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
+                      ? "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`}
                   aria-label="Open settings"
                 >
@@ -2029,10 +2039,10 @@ export default function DashboardClient() {
           }}
         >
           <div
-            className={`w-full max-w-xl rounded-2xl border p-6 shadow-xl ${
+            className={`w-full max-w-xl rounded-lg border p-5 shadow-xl ${
               theme === "light"
-                ? "bg-white border-gray-200"
-                : "bg-gray-800 border-gray-700"
+                ? "border-slate-200 bg-white shadow-slate-200/70"
+                : "border-slate-800 bg-slate-900 shadow-black/30"
             }`}
             onClick={(event) => event.stopPropagation()}
           >
@@ -2068,7 +2078,7 @@ export default function DashboardClient() {
 
             {sharedContacts.length === 0 ? (
               <div
-                className={`mt-6 rounded-xl border border-dashed px-4 py-8 text-center text-sm ${
+                className={`mt-6 rounded-lg border border-dashed px-4 py-8 text-center text-sm ${
                   theme === "light" ? "text-gray-500" : "text-gray-400"
                 }`}
               >
@@ -2083,10 +2093,10 @@ export default function DashboardClient() {
                   return (
                     <div
                       key={contact.id}
-                      className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 ${
                         theme === "light"
-                          ? "border-gray-200 bg-gray-50"
-                          : "border-gray-700 bg-gray-900/40"
+                          ? "border-slate-200 bg-slate-50"
+                          : "border-slate-800 bg-slate-950/40"
                       }`}
                     >
                       <div>
@@ -2125,8 +2135,8 @@ export default function DashboardClient() {
                           }}
                           className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
                             theme === "light"
-                              ? "bg-white text-gray-700 hover:bg-gray-100"
-                              : "bg-gray-800 text-gray-200 hover:bg-gray-700"
+                              ? "bg-white text-slate-700 hover:bg-slate-100"
+                              : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                           }`}
                         >
                           Copy link
@@ -2151,10 +2161,10 @@ export default function DashboardClient() {
           }}
         >
           <div
-            className={`relative w-full max-w-2xl rounded-2xl border p-6 shadow-2xl ${
+            className={`relative w-full max-w-2xl rounded-lg border p-5 shadow-2xl ${
               theme === "light"
-                ? "bg-white border-gray-200"
-                : "bg-gray-900 border-gray-800"
+                ? "border-slate-200 bg-white shadow-slate-200/70"
+                : "border-slate-800 bg-slate-900 shadow-black/30"
             }`}
             onClick={(event) => event.stopPropagation()}
           >
@@ -2167,8 +2177,8 @@ export default function DashboardClient() {
               }}
               className={`absolute right-3 top-3 rounded-md px-2 py-1 text-lg transition-colors ${
                 theme === "light"
-                  ? "text-gray-500 hover:bg-gray-100"
-                  : "text-gray-400 hover:bg-gray-800"
+                  ? "text-slate-500 hover:bg-slate-100"
+                  : "text-slate-400 hover:bg-slate-800"
               } ${hasInvalidActiveCircle ? "opacity-40 cursor-not-allowed" : ""}`}
               aria-label="Close settings"
             >
@@ -2213,8 +2223,8 @@ export default function DashboardClient() {
                   onClick={() => signOut()}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                     theme === "light"
-                      ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                      : "bg-gray-700 text-gray-100 hover:bg-gray-600"
+                      ? "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                      : "bg-slate-800 text-slate-100 hover:bg-slate-700"
                   }`}
                 >
                   Log out
@@ -2236,8 +2246,8 @@ export default function DashboardClient() {
                         key={circle.id}
                         className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${
                           theme === "light"
-                            ? "border-gray-200 bg-gray-50"
-                            : "border-gray-800 bg-gray-900"
+                            ? "border-slate-200 bg-slate-50"
+                            : "border-slate-800 bg-slate-950/70"
                         } ${
                           circle.isActive && isNameEmpty
                             ? theme === "light"
@@ -2263,8 +2273,8 @@ export default function DashboardClient() {
                                 ? "border-[#00a4bd] bg-[#00a4bd]"
                                 : "border-[#00a4bd] bg-[#00a4bd]"
                               : theme === "light"
-                              ? "border-gray-300 bg-gray-200"
-                              : "border-gray-700 bg-gray-800"
+                              ? "border-slate-300 bg-slate-200"
+                              : "border-slate-700 bg-slate-800"
                           }`}
                           aria-label={`Toggle circle ${circle.name || "unnamed"}`}
                         >
@@ -2338,8 +2348,8 @@ export default function DashboardClient() {
                   }}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     theme === "light"
-                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      : "bg-gray-800 text-gray-200 hover:bg-gray-700"
+                      ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                   } ${hasInvalidActiveCircle ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Cancel
@@ -2368,10 +2378,10 @@ export default function DashboardClient() {
           }}
         >
           <div
-            className={`relative w-full max-w-lg rounded-2xl border p-6 shadow-2xl ${
+            className={`relative w-full max-w-lg rounded-lg border p-5 shadow-2xl ${
               theme === "light"
-                ? "bg-white border-gray-200"
-                : "bg-gray-900 border-gray-800"
+                ? "border-slate-200 bg-white shadow-slate-200/70"
+                : "border-slate-800 bg-slate-900 shadow-black/30"
             }`}
             onClick={(event) => event.stopPropagation()}
           >
@@ -2382,8 +2392,8 @@ export default function DashboardClient() {
               }}
               className={`absolute right-3 top-3 rounded-md px-2 py-1 text-lg transition-colors ${
                 theme === "light"
-                  ? "text-gray-500 hover:bg-gray-100"
-                  : "text-gray-400 hover:bg-gray-800"
+                  ? "text-slate-500 hover:bg-slate-100"
+                  : "text-slate-400 hover:bg-slate-800"
               }`}
               aria-label="Close contact modal"
             >
@@ -2497,8 +2507,8 @@ export default function DashboardClient() {
                   }}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     theme === "light"
-                      ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                      : "bg-gray-700 text-gray-100 hover:bg-gray-600"
+                      ? "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                      : "bg-slate-800 text-slate-100 hover:bg-slate-700"
                   }`}
                 >
                   {editingQuickId ? "Convert to Full" : "Full Contact"}
@@ -2510,8 +2520,8 @@ export default function DashboardClient() {
                   }}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     theme === "light"
-                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      : "bg-gray-800 text-gray-200 hover:bg-gray-700"
+                      ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                   }`}
                 >
                   Cancel
@@ -2590,10 +2600,10 @@ export default function DashboardClient() {
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div
-            className={`relative w-full max-w-sm rounded-2xl border p-6 shadow-2xl ${
+            className={`relative w-full max-w-sm rounded-lg border p-5 shadow-2xl ${
               theme === "light"
-                ? "bg-white border-gray-200"
-                : "bg-gray-900 border-gray-800"
+                ? "border-slate-200 bg-white shadow-slate-200/70"
+                : "border-slate-800 bg-slate-900 shadow-black/30"
             }`}
             onClick={(event) => event.stopPropagation()}
           >
@@ -2616,8 +2626,8 @@ export default function DashboardClient() {
                 onClick={() => setShowDeleteConfirm(false)}
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   theme === "light"
-                    ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    : "bg-gray-800 text-gray-200 hover:bg-gray-700"
+                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 }`}
               >
                 Cancel
@@ -2656,10 +2666,10 @@ export default function DashboardClient() {
             onClick={() => setShowNextMeetPopup(false)}
           />
           <div
-            className={`relative z-10 w-[92vw] max-w-[440px] rounded-xl border shadow-xl p-4 ${
+            className={`relative z-10 w-[92vw] max-w-[440px] rounded-lg border p-4 shadow-xl ${
               theme === "light"
-                ? "bg-white border-gray-200"
-                : "bg-gray-800 border-gray-700"
+                ? "border-slate-200 bg-white shadow-slate-200/70"
+                : "border-slate-800 bg-slate-900 shadow-black/30"
             }`}
           >
             <button
@@ -2729,8 +2739,8 @@ export default function DashboardClient() {
                       }}
                       className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
                         theme === "light"
-                          ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                          : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                          ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          : "bg-slate-800 hover:bg-slate-700 text-slate-300"
                       }`}
                     >
                       {option.label}
@@ -2768,8 +2778,8 @@ export default function DashboardClient() {
                           isActive
                             ? "bg-[#00a4bd] text-white"
                             : theme === "light"
-                            ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                            : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                            ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                            : "bg-slate-800 hover:bg-slate-700 text-slate-300"
                         }`}
                       >
                         {option.label}
@@ -2799,8 +2809,8 @@ export default function DashboardClient() {
                   onClick={() => setShowNextMeetPopup(false)}
                   className={`flex-1 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
                     theme === "light"
-                      ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                      : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                      ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-300"
                   }`}
                 >
                   Cancel
@@ -2836,10 +2846,10 @@ export default function DashboardClient() {
             onClick={() => setShowLastContactPopup(false)}
           />
           <div
-            className={`relative z-10 w-[92vw] max-w-[440px] rounded-xl border shadow-xl p-4 ${
+            className={`relative z-10 w-[92vw] max-w-[440px] rounded-lg border p-4 shadow-xl ${
               theme === "light"
-                ? "bg-white border-gray-200"
-                : "bg-gray-800 border-gray-700"
+                ? "border-slate-200 bg-white shadow-slate-200/70"
+                : "border-slate-800 bg-slate-900 shadow-black/30"
             }`}
           >
             <button
@@ -2904,8 +2914,8 @@ export default function DashboardClient() {
                       }}
                       className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${
                         theme === "light"
-                          ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                          : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                          ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          : "bg-slate-800 hover:bg-slate-700 text-slate-300"
                       }`}
                     >
                       {option.label}
@@ -2931,8 +2941,8 @@ export default function DashboardClient() {
                   onClick={() => setShowLastContactPopup(false)}
                   className={`flex-1 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
                     theme === "light"
-                      ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                      : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                      ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-300"
                   }`}
                 >
                   Cancel

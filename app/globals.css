@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background-light: #f5f8fa;
-  --foreground-light: #213343;
-  --background-dark: #0b141f;
+  --background-light: #f8fafc;
+  --foreground-light: #0f172a;
+  --background-dark: #020617;
   --foreground-dark: #f1f5f9;
   --background: var(--background-light);
   --foreground: var(--foreground-light);
@@ -24,7 +24,8 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   overflow: hidden;
 }
 
