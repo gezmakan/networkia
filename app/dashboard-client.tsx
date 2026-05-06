@@ -1218,19 +1218,7 @@ export default function DashboardClient() {
         contact.tags.some((tag) => tag.toLowerCase() === "just met")
       )) ||
     selectedCircleSet.has("just met");
-  const circleMemberships = new Set(
-    contactsReady
-      ? allContacts.flatMap((contact) =>
-          contact.tags.map((tag) => tag.toLowerCase())
-        )
-      : []
-  );
-  const visibleCircles = contactsReady
-    ? activeCircles.filter((circle) => {
-        const key = circle.toLowerCase();
-        return circleMemberships.has(key) || selectedCircleSet.has(key);
-      })
-    : activeCircles;
+  const visibleCircles = activeCircles;
   const tagFilters = [
     ...(hasJustMet ? [{ label: "Just Met", key: "just met" }] : []),
     ...visibleCircles.map((circle) => ({
