@@ -264,6 +264,7 @@ export default function DashboardClient() {
         if (!response.ok) {
           throw new Error("Failed to update circles");
         }
+        circlesDirtyRef.current = false;
         return;
       }
       setCachedCircleSettings(newCircles);
@@ -400,6 +401,7 @@ export default function DashboardClient() {
           contact.id === optimisticContact.id ? savedContact : contact
         )
       );
+      contactsDirtyRef.current = false;
       return savedContact;
     },
     [isLiveMode, setLiveContacts]
@@ -448,6 +450,7 @@ export default function DashboardClient() {
           contact.id === savedContact.id ? savedContact : contact
         )
       );
+      contactsDirtyRef.current = false;
       return savedContact;
     },
     [isLiveMode, setLiveContacts]
@@ -465,6 +468,7 @@ export default function DashboardClient() {
       if (!response.ok) {
         throw new Error("Failed to delete contact");
       }
+      contactsDirtyRef.current = false;
     },
     [isLiveMode, setLiveContacts]
   );
