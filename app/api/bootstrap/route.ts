@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { auth } from "@/auth";
 import { getDefaultCircleSettings } from "@/lib/circle-settings";
 import { prisma } from "@/lib/prisma";
@@ -35,7 +36,11 @@ async function getOrCreateCircles(userId: string) {
   );
 }
 
-export async function GET() {
+const REVALIDATE_HEADERS = {
+  "Cache-Control": "private, no-cache, must-revalidate",
+} as const;
+
+export async function GET(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -52,7 +57,7 @@ export async function GET() {
     getOrCreateCircles(userId),
   ]);
 
-  return Response.json({
+  const payload = {
     user: {
       id: session.user.id,
       name: session.user.name ?? null,
@@ -72,5 +77,24 @@ export async function GET() {
       })),
     })),
     circles,
+  };
+
+  const body = JSON.stringify(payload);
+  const etag = `"${createHash("sha1").update(body).digest("base64url")}"`;
+
+  if (request.headers.get("if-none-match") === etag) {
+    return new Response(null, {
+      status: 304,
+      headers: { ETag: etag, ...REVALIDATE_HEADERS },
+    });
+  }
+
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      ETag: etag,
+      ...REVALIDATE_HEADERS,
+    },
   });
 }
