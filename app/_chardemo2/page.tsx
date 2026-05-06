@@ -1276,23 +1276,14 @@ export default function CharacterDemo2({
               onClick={() => setHoveredCard(hoveredCard === 'profile' ? null : 'profile')}
             >
               <div className="flex flex-col items-center text-center mb-6">
-                {/* Character Photo */}
-                <div className="relative group mb-4">
+                <div className="mb-4">
                   <div
-                    className={`w-32 h-32 rounded-full border-4 transition-all duration-300 ${
-                      theme === "light"
-                        ? "border-blue-400 group-hover:border-blue-500"
-                        : "border-cyan-400 group-hover:border-cyan-300"
-                    } overflow-hidden bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-lg group-hover:shadow-xl group-hover:scale-105`}
+                    className={`w-32 h-32 rounded-full border-4 ${
+                      theme === "light" ? "border-blue-400" : "border-cyan-400"
+                    } overflow-hidden bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-lg`}
                   >
                     <div className="w-full h-full flex items-center justify-center text-white text-5xl font-bold">
                       {profileInitials || "—"}
-                    </div>
-                  </div>
-                  {/* Photo upload hint on hover */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <div className="bg-black bg-opacity-50 text-white text-xs px-3 py-1 rounded-full">
-                      Change photo
                     </div>
                   </div>
                 </div>

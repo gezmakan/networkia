@@ -1,41 +1,10 @@
 import { auth } from "@/auth";
+import {
+  normalizeNextMeetCadence,
+  serializeContact,
+} from "@/lib/contact-response";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
-
-// Helper to compute daysAgo
-function computeDaysAgo(lastContact: Date | null): number | null {
-  if (!lastContact) {
-    return null;
-  }
-  const now = new Date();
-  const diff = now.getTime() - lastContact.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-function normalizeNextMeetCadence(value: unknown) {
-  if (value === undefined) {
-    return undefined;
-  }
-  if (value === null || value === "") {
-    return null;
-  }
-  if (typeof value !== "string") {
-    return null;
-  }
-  const normalized = value.trim().toLowerCase();
-  switch (normalized) {
-    case "weekly":
-      return "WEEKLY";
-    case "biweekly":
-      return "BIWEEKLY";
-    case "monthly":
-      return "MONTHLY";
-    case "quarterly":
-      return "QUARTERLY";
-    default:
-      return null;
-  }
-}
 
 // GET /api/contacts/[id] - Get single contact
 export async function GET(
@@ -67,21 +36,7 @@ export async function GET(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const contactWithDaysAgo = {
-    ...contact,
-    daysAgo: computeDaysAgo(contact.lastContact),
-    nextMeetCadence: contact.nextMeetCadence
-      ? contact.nextMeetCadence.toLowerCase()
-      : null,
-    interactionNotes: contact.interactions.map((interaction) => ({
-      id: interaction.id,
-      title: interaction.title,
-      body: interaction.body,
-      date: interaction.date.toISOString(),
-    })),
-  };
-
-  return Response.json(contactWithDaysAgo);
+  return Response.json(serializeContact(contact));
 }
 
 // PATCH /api/contacts/[id] - Update contact
@@ -187,21 +142,7 @@ export async function PATCH(
       },
     });
 
-    const contactWithDaysAgo = {
-      ...contact,
-      daysAgo: computeDaysAgo(contact.lastContact),
-      nextMeetCadence: contact.nextMeetCadence
-        ? contact.nextMeetCadence.toLowerCase()
-        : null,
-      interactionNotes: contact.interactions.map((interaction) => ({
-        id: interaction.id,
-        title: interaction.title,
-        body: interaction.body,
-        date: interaction.date.toISOString(),
-      })),
-    };
-
-    return Response.json(contactWithDaysAgo);
+    return Response.json(serializeContact(contact));
   } catch (error) {
     console.error("Error updating contact:", error);
     return Response.json(
