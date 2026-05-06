@@ -267,24 +267,36 @@ export default function DashboardClient() {
     async (newCircles: CircleSetting[]) => {
       circlesDirtyRef.current = true;
       if (isLiveMode) {
-        setLiveCircleSettings(newCircles);
-        setCachedCircleSettings(newCircles);
-        const response = await fetch("/api/circles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            circles: newCircles.map((circle, index) => ({
-              name: circle.name,
-              isActive: circle.isActive,
-              order: index,
-            })),
-          }),
+        let snapshot: CircleSetting[] = [];
+        setLiveCircleSettings((current) => {
+          snapshot = current;
+          return newCircles;
         });
-        if (!response.ok) {
-          throw new Error("Failed to update circles");
+        setCachedCircleSettings(newCircles);
+
+        try {
+          const response = await fetch("/api/circles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              circles: newCircles.map((circle, index) => ({
+                name: circle.name,
+                isActive: circle.isActive,
+                order: index,
+              })),
+            }),
+          });
+          if (!response.ok) {
+            throw new Error("Failed to update circles");
+          }
+          circlesDirtyRef.current = false;
+          return;
+        } catch (error) {
+          setLiveCircleSettings(snapshot);
+          setCachedCircleSettings(snapshot);
+          circlesDirtyRef.current = false;
+          throw error;
         }
-        circlesDirtyRef.current = false;
-        return;
       }
       setCachedCircleSettings(newCircles);
     },
@@ -406,22 +418,30 @@ export default function DashboardClient() {
       };
       setLiveContacts((current) => [optimisticContact, ...current]);
 
-      const response = await fetch("/api/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create contact");
+      try {
+        const response = await fetch("/api/contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to create contact");
+        }
+        const savedContact = (await response.json()) as BootstrapContact;
+        setLiveContacts((current) =>
+          current.map((contact) =>
+            contact.id === optimisticContact.id ? savedContact : contact
+          )
+        );
+        contactsDirtyRef.current = false;
+        return savedContact;
+      } catch (error) {
+        setLiveContacts((current) =>
+          current.filter((contact) => contact.id !== optimisticContact.id)
+        );
+        contactsDirtyRef.current = false;
+        throw error;
       }
-      const savedContact = (await response.json()) as BootstrapContact;
-      setLiveContacts((current) =>
-        current.map((contact) =>
-          contact.id === optimisticContact.id ? savedContact : contact
-        )
-      );
-      contactsDirtyRef.current = false;
-      return savedContact;
     },
     [isLiveMode, setLiveContacts]
   );
@@ -431,8 +451,10 @@ export default function DashboardClient() {
       if (!isLiveMode) {
         return;
       }
-      setLiveContacts((current) =>
-        current.map((contact) =>
+      let snapshot: BootstrapContact | undefined;
+      setLiveContacts((current) => {
+        snapshot = current.find((contact) => contact.id === input.id);
+        return current.map((contact) =>
           contact.id === input.id
             ? {
                 ...contact,
@@ -449,28 +471,41 @@ export default function DashboardClient() {
                     : contact.notes,
               }
             : contact
-        )
-      );
-
-      const response = await fetch(`/api/contacts/${input.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `Failed to update contact: ${response.status}`
         );
+      });
+
+      try {
+        const response = await fetch(`/api/contacts/${input.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Failed to update contact: ${response.status}`
+          );
+        }
+        const savedContact = (await response.json()) as BootstrapContact;
+        setLiveContacts((current) =>
+          current.map((contact) =>
+            contact.id === savedContact.id ? savedContact : contact
+          )
+        );
+        contactsDirtyRef.current = false;
+        return savedContact;
+      } catch (error) {
+        if (snapshot) {
+          const original = snapshot;
+          setLiveContacts((current) =>
+            current.map((contact) =>
+              contact.id === original.id ? original : contact
+            )
+          );
+        }
+        contactsDirtyRef.current = false;
+        throw error;
       }
-      const savedContact = (await response.json()) as BootstrapContact;
-      setLiveContacts((current) =>
-        current.map((contact) =>
-          contact.id === savedContact.id ? savedContact : contact
-        )
-      );
-      contactsDirtyRef.current = false;
-      return savedContact;
     },
     [isLiveMode, setLiveContacts]
   );
@@ -480,14 +515,28 @@ export default function DashboardClient() {
       if (!isLiveMode) {
         return;
       }
-      setLiveContacts((current) => current.filter((contact) => contact.id !== id));
-      const response = await fetch(`/api/contacts/${id}`, {
-        method: "DELETE",
+      let snapshot: BootstrapContact | undefined;
+      setLiveContacts((current) => {
+        snapshot = current.find((contact) => contact.id === id);
+        return current.filter((contact) => contact.id !== id);
       });
-      if (!response.ok) {
-        throw new Error("Failed to delete contact");
+
+      try {
+        const response = await fetch(`/api/contacts/${id}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to delete contact");
+        }
+        contactsDirtyRef.current = false;
+      } catch (error) {
+        if (snapshot) {
+          const original = snapshot;
+          setLiveContacts((current) => [original, ...current]);
+        }
+        contactsDirtyRef.current = false;
+        throw error;
       }
-      contactsDirtyRef.current = false;
     },
     [isLiveMode, setLiveContacts]
   );
