@@ -89,6 +89,25 @@ type BootstrapPayload = {
 
 const CONTACTS_CACHE_PREFIX = "live_bootstrap_contacts_";
 
+const getDaysAgoFromDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return Number.NaN;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  return Math.round(
+    (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+  );
+};
+
+const daysAgoOrNull = (value: string | null | undefined): number | null => {
+  if (!value) return null;
+  const result = getDaysAgoFromDate(value);
+  return Number.isNaN(result) ? null : result;
+};
+
 const readJsonCache = <T,>(key: string | null, fallback: T): T => {
   if (!key || typeof window === "undefined") {
     return fallback;
@@ -832,10 +851,7 @@ export default function DashboardClient() {
           : contact.tags || [],
         location: contact.location || "",
         lastContact: contact.lastContact || "",
-        daysAgo:
-          contact.daysAgo !== null && contact.daysAgo !== undefined
-            ? contact.daysAgo
-            : null,
+        daysAgo: daysAgoOrNull(contact.lastContact),
         nextMeetDate: contact.nextMeetDate,
         nextMeetCadence: contact.nextMeetCadence ?? null,
         isQuick: contact.isQuickContact,
@@ -862,18 +878,6 @@ export default function DashboardClient() {
     };
   };
   const contactsPerPage = 10;
-  const getDaysAgoFromDate = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return Number.NaN;
-    }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    return Math.round(
-      (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-    );
-  };
   const getContactDaysAgo = (contact: Contact) => {
     // Check for null daysAgo first (when no lastContact was ever set)
     if (contact.daysAgo === null) {

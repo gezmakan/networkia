@@ -1,16 +1,8 @@
 import { createHash } from "crypto";
 import { auth } from "@/auth";
 import { getDefaultCircleSettings } from "@/lib/circle-settings";
+import { serializeContact } from "@/lib/contact-response";
 import { prisma } from "@/lib/prisma";
-
-function computeDaysAgo(lastContact: Date | null): number | null {
-  if (!lastContact) {
-    return null;
-  }
-  const now = new Date();
-  const diff = now.getTime() - lastContact.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
 
 async function getOrCreateCircles(userId: string) {
   const existingCircles = await prisma.circle.findMany({
@@ -63,19 +55,7 @@ export async function GET(request: Request) {
       name: session.user.name ?? null,
       email: session.user.email ?? null,
     },
-    contacts: contacts.map((contact) => ({
-      ...contact,
-      daysAgo: computeDaysAgo(contact.lastContact),
-      nextMeetCadence: contact.nextMeetCadence
-        ? contact.nextMeetCadence.toLowerCase()
-        : null,
-      interactionNotes: contact.interactions.map((interaction) => ({
-        id: interaction.id,
-        title: interaction.title,
-        body: interaction.body,
-        date: interaction.date.toISOString(),
-      })),
-    })),
+    contacts: contacts.map(serializeContact),
     circles,
   };
 
